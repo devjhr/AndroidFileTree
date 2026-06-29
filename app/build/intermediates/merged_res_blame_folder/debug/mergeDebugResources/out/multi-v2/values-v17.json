@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "ir.hanzodev1375.filetreeapp-mergeDebugResources-33:/values-v17/values-v17.xml",
+            "outputFile": "ir.hanzodev1375.filetreeapp-mergeDebugResources-34:/values-v17/values-v17.xml",
             "map": [
                 {
-                    "source": "/data/user/0/com.tom.rv2ide/files/home/.gradle/caches/9.0.0/transforms/508a925b4867e2f95a26e837f586f9be/transformed/appcompat-1.7.1/res/values-v17/values-v17.xml",
+                    "source": "/data/user/0/com.tom.rv2ide/files/home/.gradle/caches/9.0.0/transforms/07b98e47d211952d9de247e9182d1abf/transformed/appcompat-1.7.1/res/values-v17/values-v17.xml",
                     "from": {
                         "startLines": "2,5,9,12,15,18,22,25,29,33,37,40,43,46,50,53,57",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",

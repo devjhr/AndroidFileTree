@@ -20,3 +20,4 @@ rootProject.name = "FileTree"
 
 include(":app")
 include ':filetreelib'
+include ':filetreeglide'

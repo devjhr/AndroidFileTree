@@ -1,14 +1,10 @@
 [
     {
-        "merged": "/data/user/0/com.tom.rv2ide/files/home/.gradle/daemon/9.0.0/ir.hanzodev1375.filetreeapp-mergeDebugResources-34:/layout/activity_main.xml",
-        "source": "/data/user/0/com.tom.rv2ide/files/home/.gradle/daemon/9.0.0/ir.hanzodev1375.filetreeapp-main-37:/layout/activity_main.xml"
+        "merged": "ir.hanzodev1375.filetreeapp-mergeDebugResources-35:/layout/activity_main.xml",
+        "source": "ir.hanzodev1375.filetreeapp-main-38:/layout/activity_main.xml"
     },
     {
-        "merged": "/data/user/0/com.tom.rv2ide/files/home/.gradle/daemon/9.0.0/ir.hanzodev1375.filetreeapp-mergeDebugResources-34:/layout/activity_sample_explorer.xml",
-        "source": "/data/user/0/com.tom.rv2ide/files/home/.gradle/daemon/9.0.0/ir.hanzodev1375.filetreeapp-main-37:/layout/activity_sample_explorer.xml"
-    },
-    {
-        "merged": "ir.hanzodev1375.filetreeapp-mergeDebugResources-34:/layout/activity_sample_explorer.xml",
-        "source": "ir.hanzodev1375.filetreeapp-main-37:/layout/activity_sample_explorer.xml"
+        "merged": "ir.hanzodev1375.filetreeapp-mergeDebugResources-35:/layout/activity_sample_explorer.xml",
+        "source": "ir.hanzodev1375.filetreeapp-main-38:/layout/activity_sample_explorer.xml"
     }
 ]

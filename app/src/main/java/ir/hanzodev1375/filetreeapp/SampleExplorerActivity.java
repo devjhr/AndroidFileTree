@@ -3,6 +3,8 @@ package ir.hanzodev1375.filetreeapp;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -13,7 +15,9 @@ import android.text.TextWatcher;
 import android.view.ContextMenu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
@@ -22,6 +26,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.bumptech.glide.Glide;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import ir.hanzodev1375.filetreelib.FileIconGlide;
 import ir.hanzodev1375.filetreelib.drag.DragManager;
 import ir.hanzodev1375.filetreelib.widget.TreeView;
 import ir.hanzodev1375.filetreelib.core.TreeController;
@@ -230,6 +237,7 @@ public class SampleExplorerActivity extends AppCompatActivity {
     treeView.attachDragManager(dragManager);
     if (adapter != null) {
       adapter.setClipboardManager(clipboard);
+      adapter.setIconProvider(new FileIconGlide());
 
       adapter.setOnNodeClickListener(
           (node, view) -> {
@@ -238,6 +246,19 @@ public class SampleExplorerActivity extends AppCompatActivity {
               controller.toggleNode(node);
             } else {
               Toast.makeText(this, "Open: " + node.getName(), Toast.LENGTH_SHORT).show();
+              if (node.getAbsolutePath().endsWith(".png")) {
+                Toast.makeText(this, node.getAbsolutePath(), Toast.LENGTH_LONG).show();
+                ImageView img = new ImageView(this);
+
+                img.setLayoutParams(
+                    new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1000));
+
+                img.setBackgroundColor(Color.RED);
+
+                new AlertDialog.Builder(this).setTitle("rjejek").setView(img).show();
+
+                Glide.with(this).load(new File(node.getAbsolutePath())).into(img);
+              }
             }
           });
 

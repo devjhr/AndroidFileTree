@@ -2,9 +2,12 @@ package ir.hanzodev1375.filetreelib.icons;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
+import android.widget.ImageView;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
+
 import ir.hanzodev1375.filetreelib.R;
 import ir.hanzodev1375.filetreelib.core.FileIconHelper;
 import ir.hanzodev1375.filetreelib.core.TreeNode;
@@ -13,35 +16,87 @@ import ir.hanzodev1375.filetreelib.utils.TreeUtils;
 
 public class DefaultIconProvider extends BaseIconProvider {
 
-  private FileIconHelper icon;
-
   @Nullable
   @Override
   public Drawable getIcon(@NonNull Context context, @NonNull TreeNode node) {
-    if (node.isLoadingPlaceholder()) return null;
+
+    if (node.isLoadingPlaceholder()) {
+      return null;
+    }
+
     if (node.isFolder()) {
       return ContextCompat.getDrawable(context, R.drawable.ic_filetree_folder);
     }
+
+    FilePayload payloads = node.getPayload(FilePayload.class);
+    String filePath = payloads != null ? payloads.getAbsolutePath() : node.getName();
+    if (filePath == null || filePath.isEmpty()) filePath = node.getName();
+
+    FileIconHelper helper = new FileIconHelper(filePath);
+    helper.setDynamicFolderEnabled(true);
+    helper.setEnvironmentEnabled(true);
+
+    return ContextCompat.getDrawable(context, helper.getFileIcon());
+  }
+
+  @Override
+  public void loadIcon(
+      @NonNull Context context, @NonNull TreeNode node, @NonNull ImageView target) {
+
+    if (node.isLoadingPlaceholder()) {
+      target.setImageDrawable(null);
+      return;
+    }
+
+    if (node.isFolder()) {
+      target.setImageResource(R.drawable.ic_filetree_folder);
+      return;
+    }
+
     FilePayload payload = node.getPayload(FilePayload.class);
-    String ext = payload != null ? payload.getExtension() : TreeUtils.getExtension(node.getName());
-    icon = new FileIconHelper(ext);
-    icon.setDynamicFolderEnabled(true);
-    icon.setEnvironmentEnabled(true);
-    return ContextCompat.getDrawable(context, icon.getFileIcon());
+
+    String filePath = payload != null ? payload.getAbsolutePath() : node.getName();
+
+    if (filePath == null || filePath.isEmpty()) {
+      filePath = node.getName();
+    }
+
+    FileIconHelper helper = new FileIconHelper(filePath);
+    helper.setDynamicFolderEnabled(true);
+    helper.setEnvironmentEnabled(true);
+    target.setImageResource(helper.getFileIcon());
   }
 
   @Nullable
   @Override
   public Drawable getBadgeIcon(@NonNull Context context, @NonNull TreeNode node) {
+
     FilePayload p = node.getPayload(FilePayload.class);
-    if (p == null) return null;
-    if (p.getErrorCount() > 0) return ContextCompat.getDrawable(context, R.drawable.ic_badge_error);
-    if (p.isBookmarked()) return ContextCompat.getDrawable(context, R.drawable.ic_badge_bookmark);
-    if (p.isGitModified())
+
+    if (p == null) {
+      return null;
+    }
+
+    if (p.getErrorCount() > 0) {
+      return ContextCompat.getDrawable(context, R.drawable.ic_badge_error);
+    }
+
+    if (p.isBookmarked()) {
+      return ContextCompat.getDrawable(context, R.drawable.ic_badge_bookmark);
+    }
+
+    if (p.isGitModified()) {
       return ContextCompat.getDrawable(context, R.drawable.ic_badge_git_modified);
-    if (p.isGitStaged()) return ContextCompat.getDrawable(context, R.drawable.ic_badge_git_staged);
-    if (p.isGitConflicted())
+    }
+
+    if (p.isGitStaged()) {
+      return ContextCompat.getDrawable(context, R.drawable.ic_badge_git_staged);
+    }
+
+    if (p.isGitConflicted()) {
       return ContextCompat.getDrawable(context, R.drawable.ic_badge_git_conflict);
+    }
+
     return null;
   }
 }

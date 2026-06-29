@@ -25,19 +25,20 @@ import java.util.concurrent.Executors;
  * The single public façade for all tree operations.
  *
  * <p>{@code TreeController} coordinates between:
+ *
  * <ul>
- *   <li>{@link TreeModel}         — structural data owner
- *   <li>{@link ExpandManager}     — expand/collapse and visible-list maintenance
- *   <li>{@link SelectionManager}  — selection state
- *   <li>{@link TreeDataProvider}  — async data loading
- *   <li>{@link TreeCache}         — subtree caching
+ *   <li>{@link TreeModel} — structural data owner
+ *   <li>{@link ExpandManager} — expand/collapse and visible-list maintenance
+ *   <li>{@link SelectionManager} — selection state
+ *   <li>{@link TreeDataProvider} — async data loading
+ *   <li>{@link TreeCache} — subtree caching
  * </ul>
  *
- * <p>Callers should hold a reference only to {@code TreeController} and never
- * manipulate the model or managers directly.  This keeps the code compatible with
- * MVC, MVVM, and MVP patterns.
+ * <p>Callers should hold a reference only to {@code TreeController} and never manipulate the model
+ * or managers directly. This keeps the code compatible with MVC, MVVM, and MVP patterns.
  *
  * <h3>Usage</h3>
+ *
  * <pre>{@code
  * TreeController controller = new TreeController.Builder(context)
  *     .model(treeModel)
@@ -56,9 +57,7 @@ public final class TreeController {
     // Callback interfaces
     // -------------------------------------------------------------------------
 
-    /**
-     * Notified after a rename completes (or fails).
-     */
+    /** Notified after a rename completes (or fails). */
     public interface RenameCallback {
         /** Called on the main thread when the rename succeeded. */
         @MainThread
@@ -69,9 +68,7 @@ public final class TreeController {
         void onRenameFailed(@NonNull TreeNode node, @NonNull Exception error);
     }
 
-    /**
-     * Notified after a delete completes (or fails).
-     */
+    /** Notified after a delete completes (or fails). */
     public interface DeleteCallback {
         /** Called on the main thread when deletion succeeded. */
         @MainThread
@@ -82,9 +79,7 @@ public final class TreeController {
         void onDeleteFailed(@NonNull List<TreeNode> nodes, @NonNull Exception error);
     }
 
-    /**
-     * Notified after a create-folder or create-file operation completes.
-     */
+    /** Notified after a create-folder or create-file operation completes. */
     public interface CreateCallback {
         /** Called on the main thread when the node was created and inserted. */
         @MainThread
@@ -99,32 +94,32 @@ public final class TreeController {
     // Fields
     // -------------------------------------------------------------------------
 
-    @NonNull private final TreeModel          model;
-    @NonNull private final ExpandManager      expandManager;
-    @NonNull private final SelectionManager   selectionManager;
-    @NonNull private final TreeDataProvider   dataProvider;
-    @NonNull private final TreeCache          cache;
-    @NonNull private final VisibleNodeList    visibleList;
-    @NonNull private final ExecutorService    backgroundExecutor;
-    @NonNull private final Handler            mainHandler;
+    @NonNull private final TreeModel model;
+    @NonNull private final ExpandManager expandManager;
+    @NonNull private final SelectionManager selectionManager;
+    @NonNull private final TreeDataProvider dataProvider;
+    @NonNull private final TreeCache cache;
+    @NonNull private final VisibleNodeList visibleList;
+    @NonNull private final ExecutorService backgroundExecutor;
+    @NonNull private final Handler mainHandler;
 
     // -------------------------------------------------------------------------
     // Constructor (via Builder)
     // -------------------------------------------------------------------------
 
     private TreeController(@NonNull Builder builder) {
-        this.model             = builder.model;
-        this.visibleList       = builder.visibleList;
-        this.expandManager     = builder.expandManager;
-        this.selectionManager  = builder.selectionManager;
-        this.dataProvider      = builder.dataProvider;
-        this.cache             = builder.cache;
+        this.model = builder.model;
+        this.visibleList = builder.visibleList;
+        this.expandManager = builder.expandManager;
+        this.selectionManager = builder.selectionManager;
+        this.dataProvider = builder.dataProvider;
+        this.cache = builder.cache;
         this.backgroundExecutor = Executors.newSingleThreadExecutor(r -> {
             Thread t = new Thread(r, "TreeController-bg");
             t.setDaemon(true);
             return t;
         });
-        this.mainHandler       = new Handler(Looper.getMainLooper());
+        this.mainHandler = new Handler(Looper.getMainLooper());
     }
 
     // -------------------------------------------------------------------------
@@ -132,8 +127,8 @@ public final class TreeController {
     // -------------------------------------------------------------------------
 
     /**
-     * Expands {@code node}.  If the node has not yet loaded its children,
-     * triggers a lazy load via the {@link TreeDataProvider}.
+     * Expands {@code node}. If the node has not yet loaded its children, triggers a lazy load via
+     * the {@link TreeDataProvider}.
      *
      * @param node the node to expand
      */
@@ -176,8 +171,8 @@ public final class TreeController {
     }
 
     /**
-     * Expands all ancestors of {@code node} so it becomes visible, then scrolls
-     * the RecyclerView to it.
+     * Expands all ancestors of {@code node} so it becomes visible, then scrolls the RecyclerView to
+     * it.
      *
      * @param node the node to reveal
      */
@@ -214,9 +209,8 @@ public final class TreeController {
      * Selects {@code node} using the given mode.
      *
      * @param node the node to select
-     * @param mode one of {@link SelectionManager#MODE_SINGLE},
-     *             {@link SelectionManager#MODE_MULTI},
-     *             {@link SelectionManager#MODE_RANGE}
+     * @param mode one of {@link SelectionManager#MODE_SINGLE}, {@link SelectionManager#MODE_MULTI},
+     *     {@link SelectionManager#MODE_RANGE}
      */
     @MainThread
     public void selectNode(@NonNull TreeNode node, int mode) {
@@ -239,9 +233,7 @@ public final class TreeController {
         selectionManager.clearSelection();
     }
 
-    /**
-     * Returns the current selection as an unmodifiable list.
-     */
+    /** Returns the current selection as an unmodifiable list. */
     @NonNull
     @MainThread
     public List<TreeNode> getSelectedNodes() {
@@ -253,13 +245,12 @@ public final class TreeController {
     // -------------------------------------------------------------------------
 
     /**
-     * Renames {@code node} to {@code newName} asynchronously.
-     * The rename is first committed to the filesystem (via {@link TreeDataProvider}),
-     * then the tree model is updated, then {@code callback} is invoked on the
-     * main thread.
+     * Renames {@code node} to {@code newName} asynchronously. The rename is first committed to the
+     * filesystem (via {@link TreeDataProvider}), then the tree model is updated, then {@code
+     * callback} is invoked on the main thread.
      *
-     * @param node     the node to rename
-     * @param newName  the new display name (must not be empty)
+     * @param node the node to rename
+     * @param newName the new display name (must not be empty)
      * @param callback result callback (may be null)
      */
     @MainThread
@@ -304,10 +295,10 @@ public final class TreeController {
     // -------------------------------------------------------------------------
 
     /**
-     * Deletes all currently selected nodes asynchronously.  Falls back to
-     * deleting only {@code node} if nothing is selected.
+     * Deletes all currently selected nodes asynchronously. Falls back to deleting only {@code node}
+     * if nothing is selected.
      *
-     * @param node     the primary node to delete (used if no selection)
+     * @param node the primary node to delete (used if no selection)
      * @param callback result callback (may be null)
      */
     @MainThread
@@ -356,8 +347,8 @@ public final class TreeController {
     /**
      * Creates a new folder named {@code name} as a child of {@code parent}.
      *
-     * @param parent   the parent node under which the folder is created
-     * @param name     the folder name (must not be empty)
+     * @param parent the parent node under which the folder is created
+     * @param name the folder name (must not be empty)
      * @param callback result callback (may be null)
      */
     @MainThread
@@ -371,8 +362,8 @@ public final class TreeController {
     /**
      * Creates a new file named {@code name} as a child of {@code parent}.
      *
-     * @param parent   the parent node under which the file is created
-     * @param name     the file name (must not be empty)
+     * @param parent the parent node under which the file is created
+     * @param name the file name (must not be empty)
      * @param callback result callback (may be null)
      */
     @MainThread
@@ -425,12 +416,12 @@ public final class TreeController {
     }
 
     /**
-     * Finds the correct alphabetical insertion index for {@code newNode} within
-     * {@code parent}'s children.  Folders are grouped before files (VS Code style).
+     * Finds the correct alphabetical insertion index for {@code newNode} within {@code parent}'s
+     * children. Folders are grouped before files (VS Code style).
      *
-     * @param parent  the parent whose children list to search
+     * @param parent the parent whose children list to search
      * @param newNode the node to be inserted
-     * @param type    {@link TreeNode#TYPE_FOLDER} or {@link TreeNode#TYPE_FILE}
+     * @param type {@link TreeNode#TYPE_FOLDER} or {@link TreeNode#TYPE_FILE}
      * @return the insertion index
      */
     private int findAlphabeticalInsertIndex(
@@ -445,7 +436,7 @@ public final class TreeController {
         for (TreeNode child : children) {
             // Folders come before files.
             if (type == TreeNode.TYPE_FOLDER && child.isFile()) break;
-            if (type == TreeNode.TYPE_FILE   && child.isFolder()) {
+            if (type == TreeNode.TYPE_FILE && child.isFolder()) {
                 index++;
                 continue;
             }
@@ -460,8 +451,7 @@ public final class TreeController {
     // -------------------------------------------------------------------------
 
     /**
-     * Triggers a background load of {@code parent}'s children via the
-     * {@link TreeDataProvider}.
+     * Triggers a background load of {@code parent}'s children via the {@link TreeDataProvider}.
      *
      * @param parent the node whose children to load
      */
@@ -499,8 +489,8 @@ public final class TreeController {
     // -------------------------------------------------------------------------
 
     /**
-     * Captures the current UI state into a {@link TreeState} that can be
-     * persisted across configuration changes.
+     * Captures the current UI state into a {@link TreeState} that can be persisted across
+     * configuration changes.
      *
      * @return a snapshot of the current state
      */
@@ -534,9 +524,8 @@ public final class TreeController {
     }
 
     /**
-     * Restores the tree's UI state from a previously saved {@link TreeState}.
-     * Expanded nodes are re-expanded, selected nodes are re-selected, and
-     * bookmarked nodes are re-bookmarked.
+     * Restores the tree's UI state from a previously saved {@link TreeState}. Expanded nodes are
+     * re-expanded, selected nodes are re-selected, and bookmarked nodes are re-bookmarked.
      *
      * @param state the state to restore; if {@code null} or empty, nothing happens
      */
@@ -544,8 +533,8 @@ public final class TreeController {
     public void restoreState(@Nullable TreeState state) {
         if (state == null || state.isEmpty()) return;
 
-        Set<String> expandedIds   = state.getExpandedIds();
-        Set<String> selectedIds   = state.getSelectedIds();
+        Set<String> expandedIds = state.getExpandedIds();
+        Set<String> selectedIds = state.getSelectedIds();
         Set<String> bookmarkedIds = state.getBookmarkedIds();
         Map<String, TreeNodeState> nodeStates = state.getNodeStates();
 
@@ -618,9 +607,7 @@ public final class TreeController {
         return dataProvider;
     }
 
-    /**
-     * Shuts down the background executor.  Call from {@code onDestroy()}.
-     */
+    /** Shuts down the background executor. Call from {@code onDestroy()}. */
     public void destroy() {
         backgroundExecutor.shutdownNow();
     }
@@ -632,15 +619,15 @@ public final class TreeController {
     /** Fluent builder for {@link TreeController}. */
     public static final class Builder {
 
-        @NonNull private TreeModel         model            = new TreeModel();
-        @NonNull private VisibleNodeList   visibleList      = new VisibleNodeList();
-        @NonNull private ExpandManager     expandManager    = new ExpandManager(visibleList);
-        @NonNull private SelectionManager  selectionManager = new SelectionManager();
-        @NonNull private TreeDataProvider  dataProvider;
-        @NonNull private TreeCache         cache            = new TreeCache();
+        @NonNull private TreeModel model = new TreeModel();
+        @NonNull private VisibleNodeList visibleList = new VisibleNodeList();
+        @NonNull private ExpandManager expandManager = new ExpandManager(visibleList);
+        @NonNull private SelectionManager selectionManager = new SelectionManager();
+        @NonNull private TreeDataProvider dataProvider;
+        @NonNull private TreeCache cache = new TreeCache();
 
         /**
-         * Creates a builder.  A {@link TreeDataProvider} is mandatory.
+         * Creates a builder. A {@link TreeDataProvider} is mandatory.
          *
          * @param dataProvider the provider that backs lazy loading and mutations
          */
@@ -651,7 +638,7 @@ public final class TreeController {
         public Builder model(@NonNull TreeModel model) {
             this.model = model;
             // Re-wire ExpandManager to the existing visible list.
-            this.visibleList   = new VisibleNodeList();
+            this.visibleList = new VisibleNodeList();
             this.expandManager = new ExpandManager(this.visibleList);
             return this;
         }

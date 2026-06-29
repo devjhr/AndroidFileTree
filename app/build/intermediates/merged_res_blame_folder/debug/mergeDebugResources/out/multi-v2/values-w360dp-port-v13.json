@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "ir.hanzodev1375.filetreeapp-mergeDebugResources-33:/values-w360dp-port-v13/values-w360dp-port-v13.xml",
+            "outputFile": "ir.hanzodev1375.filetreeapp-mergeDebugResources-34:/values-w360dp-port-v13/values-w360dp-port-v13.xml",
             "map": [
                 {
-                    "source": "/data/user/0/com.tom.rv2ide/files/home/.gradle/caches/9.0.0/transforms/36da62139774a7aa74a341c509123e56/transformed/material-1.13.0/res/values-w360dp-port-v13/values-w360dp-port-v13.xml",
+                    "source": "/data/user/0/com.tom.rv2ide/files/home/.gradle/caches/9.0.0/transforms/959bd9ec248708ada41ac7fa0042128a/transformed/material-1.13.0/res/values-w360dp-port-v13/values-w360dp-port-v13.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9",
                         "startColumns": "4,4,4,4,4,4,4,4",

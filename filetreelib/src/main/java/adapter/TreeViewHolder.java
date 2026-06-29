@@ -30,6 +30,8 @@ public final class TreeViewHolder extends RecyclerView.ViewHolder {
   final ImageView ivBadgeIcon;
   final View indentSpacer;
   final CheckBox checkbox;
+  boolean showItem = false;
+  final ImageView creatorFile, creatorFolder;
 
   public TreeViewHolder(@NonNull View itemView) {
     super(itemView);
@@ -41,6 +43,8 @@ public final class TreeViewHolder extends RecyclerView.ViewHolder {
     ivBadgeIcon = itemView.findViewById(R.id.tv_badge_icon);
     indentSpacer = itemView.findViewById(R.id.tv_indent);
     checkbox = itemView.findViewById(R.id.tv_checkbox);
+    creatorFile = itemView.findViewById(R.id.filecreator);
+    creatorFolder = itemView.findViewById(R.id.foldercreator);
   }
 
   public void bind(
@@ -64,8 +68,6 @@ public final class TreeViewHolder extends RecyclerView.ViewHolder {
     } else {
       checkbox.setVisibility(View.GONE);
     }
-
-    // Arrow
     if (node.isFile() || node.isLoadingPlaceholder()) {
       ivArrow.setVisibility(View.INVISIBLE);
     } else {
@@ -73,15 +75,16 @@ public final class TreeViewHolder extends RecyclerView.ViewHolder {
       ivArrow.setRotation(node.isExpanded() ? 90f : 0f);
       ivArrow.setOnClickListener(selectionMode ? null : arrowClickListener);
     }
-
-    // FIX: پاس دادن filePath کامل به FileIconHelper نه فقط extension
-    FilePayload payloads = node.getPayload(FilePayload.class);
-    String filePath = payloads != null ? payloads.getAbsolutePath() : node.getName();
-    if (filePath == null || filePath.isEmpty()) filePath = node.getName();
+    if (!showItem) {
+      creatorFolder.setVisibility(View.GONE);
+      creatorFile.setVisibility(View.GONE);
+    } else {
+      creatorFolder.setVisibility(node.isFolder() ? View.VISIBLE : View.GONE);
+      creatorFile.setVisibility(node.isFolder() ? View.VISIBLE : View.GONE);
+    }
 
     try {
-      FileIconHelper icon = new FileIconHelper(filePath);
-      ivIcon.setImageResource(icon.getFileIcon());
+      iconProvider.loadIcon(itemView.getContext(), node, ivIcon);
       ivIcon.setVisibility(View.VISIBLE);
     } catch (Exception e) {
       ivIcon.setImageResource(R.drawable.ic_filetree_document);
@@ -158,5 +161,9 @@ public final class TreeViewHolder extends RecyclerView.ViewHolder {
 
   public void updateArrow(boolean expanded) {
     ivArrow.setRotation(expanded ? 90f : 0f);
+  }
+
+  public void setShowIconFolderAndFile(boolean show) {
+    this.showItem = show;
   }
 }

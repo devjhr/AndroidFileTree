@@ -31,6 +31,8 @@ dependencies {
     implementation libs.androidx.core
     implementation libs.androidx.appcompat
     implementation libs.material
+    implementation libs.glide
     implementation libs.androidx.constraintlayout
     implementation project(':filetreelib')
+    implementation project(':filetreeglide')
 }

@@ -3698,6 +3698,8 @@ drawable ic_mtrl_chip_checked_black
 drawable ic_mtrl_chip_checked_circle
 drawable ic_mtrl_chip_close_circle
 drawable ic_search_black_24
+drawable icon_attach_file_round
+drawable icon_create_new_folder_round
 drawable m3_avd_hide_password
 drawable m3_avd_show_password
 drawable m3_bottom_sheet_drag_handle
@@ -3977,6 +3979,7 @@ id exitUntilCollapsed
 id expand_activities_button
 id expanded_menu
 id fade
+id filecreator
 id fill
 id fill_horizontal
 id fill_vertical
@@ -3989,12 +3992,14 @@ id fitXY
 id fixed
 id flip
 id floating
+id foldercreator
 id forever
 id fragment_container_view_tag
 id frost
 id fullscreen_header
 id ghost_view
 id ghost_view_holder
+id glide_custom_view_target_tag
 id gone
 id graph
 id graph_wrap

@@ -53,6 +53,7 @@ public final class TreeAdapter extends RecyclerView.Adapter<TreeViewHolder> {
   @NonNull private final ThemeManager theme;
   @NonNull private IconProvider iconProvider;
   @Nullable private ClipboardManager clipboardManager;
+  @Nullable private TreeViewHolder holder;
 
   @NonNull private List<TreeNode> currentList = new ArrayList<>();
   @NonNull private final Map<String, SearchResult> searchResults = new HashMap<>();
@@ -121,7 +122,6 @@ public final class TreeAdapter extends RecyclerView.Adapter<TreeViewHolder> {
               }
               if (ids.isEmpty() && selectionMode) {
                 selectionMode = false;
-                // همه رو یه‌بار برای پنهان کردن checkbox notify کن
                 notifyItemRangeChanged(0, currentList.size(), Boolean.TRUE);
                 if (selectionModeListener != null) selectionModeListener.onSelectionModeExited();
               }
@@ -155,6 +155,7 @@ public final class TreeAdapter extends RecyclerView.Adapter<TreeViewHolder> {
 
   @Override
   public void onBindViewHolder(@NonNull TreeViewHolder holder, int position) {
+    this.holder = holder;
     TreeNode node = currentList.get(position);
     SearchResult sr = searchResults.get(node.getId());
     boolean isCut =
@@ -295,5 +296,9 @@ public final class TreeAdapter extends RecyclerView.Adapter<TreeViewHolder> {
   @NonNull
   public List<TreeNode> getCurrentList() {
     return new ArrayList<>(currentList);
+  }
+
+  public void setShowIconFolderAndFile(boolean bool) {
+    holder.setShowIconFolderAndFile(bool);
   }
 }
