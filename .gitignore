@@ -1,33 +1,32 @@
-# Ignore Gradle project-specific cache directory
-.gradle
+# Gradle
+.gradle/
+.kotlin/
 
-# Ignore ACS editor directory
-.acside
-.androidide
-# Ignore Kotlin directory
-.kotlin
+# Build outputs
+build/
+**/build/
 
-# Ignore Gradle build output directory
-build
-/.idea/
+# Android IDE
+.acside/
+.androidide/
 
+# Android Studio
+.idea/
 *.iml
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+
+# Local configuration
 local.properties
-/.idea/inspectionProfiles/
-/app/release/
-/app/release/app-release.apk
-/app/release/output-metadata.json
-/app/libs/
-/app/build/
+
+# Native
+.externalNativeBuild/
+.cxx/
+
+# Captures
+captures/
+
+# macOS
+.DS_Store
+
+# Release artifacts
+app/release/
+app/libs/
