@@ -1,0 +1,29 @@
+R_DEF: Internal format may change without notice
+local
+drawable ic_launcher_background
+drawable ic_launcher_foreground
+id bar_clipboard
+id bar_selection
+id bottom_action_bar
+id btn_cancel_clipboard
+id btn_cancel_selection
+id btn_copy
+id btn_cut
+id btn_delete
+id btn_paste
+id btn_select_all
+id et_search
+id textView
+id tree_view
+id tv_clipboard_info
+id tv_selection_count
+layout activity_main
+layout activity_sample_explorer
+mipmap ic_launcher
+mipmap ic_launcher_round
+string app_name
+style AppTheme
+style Base.AppTheme
+xml backup_rules
+xml data_extraction_rules
+xml file_paths

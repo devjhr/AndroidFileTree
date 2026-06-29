@@ -1,0 +1,164 @@
+package ir.hanzodev1375.filetreelib.adapter;
+
+import android.text.SpannableString;
+import android.text.style.BackgroundColorSpan;
+import android.view.View;
+import android.widget.CheckBox;
+import android.widget.ImageView;
+import android.widget.TextView;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.recyclerview.widget.RecyclerView;
+import ir.hanzodev1375.filetreelib.R;
+import ir.hanzodev1375.filetreelib.core.FileIconHelper;
+import ir.hanzodev1375.filetreelib.core.TreeNode;
+import ir.hanzodev1375.filetreelib.icons.IconProvider;
+import ir.hanzodev1375.filetreelib.model.FilePayload;
+import ir.hanzodev1375.filetreelib.model.SearchResult;
+import ir.hanzodev1375.filetreelib.theme.ThemeManager;
+import android.graphics.drawable.Drawable;
+import android.view.ViewGroup;
+import ir.hanzodev1375.filetreelib.utils.TreeUtils;
+
+public final class TreeViewHolder extends RecyclerView.ViewHolder {
+
+  final View itemRoot;
+  final ImageView ivArrow;
+  final ImageView ivIcon;
+  final TextView tvName;
+  final TextView tvBadge;
+  final ImageView ivBadgeIcon;
+  final View indentSpacer;
+  final CheckBox checkbox;
+
+  public TreeViewHolder(@NonNull View itemView) {
+    super(itemView);
+    itemRoot = itemView;
+    ivArrow = itemView.findViewById(R.id.tv_arrow);
+    ivIcon = itemView.findViewById(R.id.tv_icon);
+    tvName = itemView.findViewById(R.id.tv_name);
+    tvBadge = itemView.findViewById(R.id.tv_badge);
+    ivBadgeIcon = itemView.findViewById(R.id.tv_badge_icon);
+    indentSpacer = itemView.findViewById(R.id.tv_indent);
+    checkbox = itemView.findViewById(R.id.tv_checkbox);
+  }
+
+  public void bind(
+      @NonNull TreeNode node,
+      @NonNull ThemeManager theme,
+      @NonNull IconProvider iconProvider,
+      @Nullable SearchResult searchResult,
+      @NonNull View.OnClickListener clickListener,
+      @NonNull View.OnLongClickListener longClickListener,
+      @NonNull View.OnClickListener arrowClickListener,
+      boolean isCut,
+      boolean selectionMode) {
+
+    // RTL-safe indent: فقط عرض تنظیم میشه، جهت را LinearLayout خودش handle میکنه
+    int indentPx = theme.getIndentWidthPx() * (node.getDepth() + 1);
+    ViewGroup.LayoutParams lp = indentSpacer.getLayoutParams();
+    lp.width = indentPx;
+    indentSpacer.setLayoutParams(lp);
+
+    if (selectionMode) {
+      checkbox.setVisibility(View.VISIBLE);
+      checkbox.setChecked(node.isSelected());
+    } else {
+      checkbox.setVisibility(View.GONE);
+    }
+
+    // Arrow
+    if (node.isFile() || node.isLoadingPlaceholder()) {
+      ivArrow.setVisibility(View.INVISIBLE);
+    } else {
+      ivArrow.setVisibility(node.hasChildren() ? View.VISIBLE : View.INVISIBLE);
+      ivArrow.setRotation(node.isExpanded() ? 90f : 0f);
+      ivArrow.setOnClickListener(selectionMode ? null : arrowClickListener);
+    }
+
+    // FIX: پاس دادن filePath کامل به FileIconHelper نه فقط extension
+    FilePayload payloads = node.getPayload(FilePayload.class);
+    String filePath = payloads != null ? payloads.getAbsolutePath() : node.getName();
+    if (filePath == null || filePath.isEmpty()) filePath = node.getName();
+
+    try {
+      FileIconHelper icon = new FileIconHelper(filePath);
+      ivIcon.setImageResource(icon.getFileIcon());
+      ivIcon.setVisibility(View.VISIBLE);
+    } catch (Exception e) {
+      ivIcon.setImageResource(R.drawable.ic_filetree_document);
+      ivIcon.setVisibility(View.VISIBLE);
+    }
+
+    // Name
+    if (searchResult != null && searchResult.getHighlightedName() != null) {
+      tvName.setText(searchResult.getHighlightedName());
+    } else if (searchResult != null && !searchResult.getMatchRanges().isEmpty()) {
+      SpannableString spannable = new SpannableString(node.getName());
+      for (SearchResult.MatchRange r : searchResult.getMatchRanges()) {
+        if (r.end <= node.getName().length()) {
+          spannable.setSpan(
+              new BackgroundColorSpan(theme.getSearchHighlightColor()),
+              r.start,
+              r.end,
+              SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+      }
+      tvName.setText(spannable);
+    } else {
+      tvName.setText(node.getName());
+    }
+
+    // Git/error color
+    FilePayload payload = node.getPayload(FilePayload.class);
+    if (payload != null) {
+      if (payload.getErrorCount() > 0) {
+        tvName.setTextColor(theme.getErrorColor());
+      } else if (payload.isGitModified()) {
+        tvName.setTextColor(theme.getGitModifiedColor());
+      } else if ((payload.getGitStatus() & FilePayload.GIT_ADDED) != 0) {
+        tvName.setTextColor(theme.getGitAddedColor());
+      } else {
+        tvName.setTextColor(theme.getTextColor());
+      }
+    } else {
+      tvName.setTextColor(theme.getTextColor());
+    }
+
+    itemRoot.setAlpha(isCut ? 0.4f : 1f);
+    itemRoot.setBackgroundColor(
+        node.isSelected() ? theme.getSelectedBg() : android.graphics.Color.TRANSPARENT);
+
+    if (payload != null && payload.getBadge() != null) {
+      tvBadge.setText(payload.getBadge());
+      tvBadge.setVisibility(View.VISIBLE);
+    } else {
+      tvBadge.setVisibility(View.GONE);
+    }
+
+    Drawable badgeIcon = iconProvider.getBadgeIcon(itemView.getContext(), node);
+    if (badgeIcon != null) {
+      ivBadgeIcon.setImageDrawable(badgeIcon);
+      ivBadgeIcon.setVisibility(View.VISIBLE);
+    } else {
+      ivBadgeIcon.setVisibility(View.GONE);
+    }
+
+    itemRoot.setOnClickListener(clickListener);
+    itemRoot.setOnLongClickListener(longClickListener);
+  }
+
+  public void updateSelection(boolean selected, int selectedBg, boolean selectionMode) {
+    itemRoot.setBackgroundColor(selected ? selectedBg : android.graphics.Color.TRANSPARENT);
+    if (selectionMode) {
+      checkbox.setVisibility(View.VISIBLE);
+      checkbox.setChecked(selected);
+    } else {
+      checkbox.setVisibility(View.GONE);
+    }
+  }
+
+  public void updateArrow(boolean expanded) {
+    ivArrow.setRotation(expanded ? 90f : 0f);
+  }
+}

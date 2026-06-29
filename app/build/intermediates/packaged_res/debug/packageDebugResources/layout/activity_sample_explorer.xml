@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    >
+    <EditText
+        android:id="@+id/et_search"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:hint="@string/hint_search"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:textSize="13sp"
+        android:inputType="text"
+        android:imeOptions="actionSearch"
+        android:singleLine="true" />
+    <ir.hanzodev1375.filetreelib.widget.TreeView
+        android:id="@+id/tree_view"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        app:tv_showTreeLines="true"
+        app:tv_animateExpand="true"
+        app:tv_animateDuration="180"
+        app:tv_indentWidth="20dp" />
+    <!-- Bottom action bar — فقط در selection mode نشون داده میشه -->
+    <LinearLayout
+        android:id="@+id/bottom_action_bar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:background="#1E1E1E"
+        android:visibility="gone">
+        <TextView
+            android:id="@+id/tv_selection_count"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="#CCCCCC"
+            android:textSize="13sp"
+            android:text="0 selected" />
+        <TextView
+            android:id="@+id/btn_select_all"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="All"
+            android:textColor="#CCCCCC"
+            android:textSize="12sp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true" />
+        <TextView
+            android:id="@+id/btn_copy"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="Copy"
+            android:textColor="#CCCCCC"
+            android:textSize="12sp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true" />
+        <TextView
+            android:id="@+id/btn_cut"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="Cut"
+            android:textColor="#CCCCCC"
+            android:textSize="12sp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true" />
+        <TextView
+            android:id="@+id/btn_delete"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="Delete"
+            android:textColor="#F44747"
+            android:textSize="12sp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true" />
+        <TextView
+            android:id="@+id/btn_paste"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="Delete"
+            android:textColor="#F44747"
+            android:textSize="12sp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true" />
+        <TextView
+            android:id="@+id/btn_cancel_clipboard"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="Delete"
+            android:textColor="#F44747"
+            android:textSize="12sp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true" />
+        <TextView
+            android:id="@+id/tv_clipboard_info"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="Delete"
+            android:textColor="#F44747"
+            android:textSize="12sp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true" />
+        <TextView
+            android:id="@+id/bar_clipboard"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="Delete"
+            android:textColor="#F44747"
+            android:textSize="12sp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true" />
+        <TextView
+            android:id="@+id/bar_selection"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="Delete"
+            android:textColor="#F44747"
+            android:textSize="12sp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true" />
+        <TextView
+            android:id="@+id/btn_cancel_selection"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="✕"
+            android:textColor="#CCCCCC"
+            android:textSize="14sp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true" />
+    </LinearLayout>
+</LinearLayout>

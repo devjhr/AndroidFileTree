@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "ir.hanzodev1375.filetreeapp-mergeDebugResources-33:/values-port/values-port.xml",
+            "map": [
+                {
+                    "source": "/data/user/0/com.tom.rv2ide/files/home/.gradle/caches/9.0.0/transforms/508a925b4867e2f95a26e837f586f9be/transformed/appcompat-1.7.1/res/values-port/values-port.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "55",
+                        "endOffsets": "106"
+                    }
+                }
+            ]
+        }
+    ]
+}

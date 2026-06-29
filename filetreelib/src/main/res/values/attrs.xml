@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ===== TreeView styleable ===== -->
+    <declare-styleable name="TreeView">
+        <attr
+            name="tv_indentWidth"
+            format="dimension"
+            />
+        <attr
+            name="tv_showTreeLines"
+            format="boolean"
+            />
+        <attr
+            name="tv_treeLineColor"
+            format="color"
+            />
+        <attr
+            name="tv_treeLineWidth"
+            format="dimension"
+            />
+        <attr
+            name="tv_animateExpand"
+            format="boolean"
+            />
+        <attr
+            name="tv_animateDuration"
+            format="integer"
+            />
+        <attr
+            name="tv_iconSize"
+            format="dimension"
+            />
+        <attr
+            name="tv_badgeSize"
+            format="dimension"
+            />
+        <attr
+            name="tv_selectionMode"
+            format="enum"
+            >
+            <enum
+                name="none"
+                value="0"
+                />
+            <enum
+                name="single"
+                value="1"
+                />
+            <enum
+                name="multi"
+                value="2"
+                />
+        </attr>
+        <attr
+            name="tv_horizontalScroll"
+            format="boolean"
+            />
+    </declare-styleable>
+
+    <!-- ===== Theme attrs (resolved by ThemeManager) ===== -->
+    <attr
+        name="tv_textColor"
+        format="color"
+        />
+    <attr
+        name="tv_selectedBackground"
+        format="color"
+        />
+    <attr
+        name="tv_hoveredBackground"
+        format="color"
+        />
+    <attr
+        name="tv_searchHighlightColor"
+        format="color"
+        />
+    <attr
+        name="tv_gitModifiedColor"
+        format="color"
+        />
+    <attr
+        name="tv_gitAddedColor"
+        format="color"
+        />
+    <attr
+        name="tv_gitDeletedColor"
+        format="color"
+        />
+    <attr
+        name="tv_errorColor"
+        format="color"
+        />
+
+</resources>

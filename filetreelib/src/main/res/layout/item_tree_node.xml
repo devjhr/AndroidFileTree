@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+     xmlns:android="http://schemas.android.com/apk/res/android"
+     android:layout_height="40dp"
+     android:layout_width="match_parent"
+     android:paddingEnd="8dp"
+     android:gravity="center_vertical"
+     android:background="?attr/selectableItemBackground"
+     android:clickable="true"
+     android:orientation="horizontal"
+     android:layoutDirection="locale"
+     android:focusable="true">
+
+    <View
+         android:layout_height="match_parent"
+         android:layout_width="0dp"
+         android:id="@+id/tv_indent" />
+
+    <CheckBox
+         android:layout_height="20dp"
+         android:layout_width="20dp"
+         android:visibility="gone"
+         android:clickable="false"
+         android:scaleX="0.8"
+         android:scaleY="0.8"
+         android:focusable="false"
+         android:id="@+id/tv_checkbox" />
+
+    <ImageView
+         android:layout_height="20dp"
+         android:layout_width="20dp"
+         android:src="@drawable/ic_arrow_right"
+         android:contentDescription="@string/cd_expand_arrow"
+         android:scaleType="centerInside"
+         android:padding="2dp"
+         android:tint="?attr/colorOnPrimary"
+         android:id="@+id/tv_arrow" />
+
+    <ImageView
+         android:layout_height="20dp"
+         android:layout_width="20dp"
+         android:layout_marginEnd="6dp"
+         android:scaleType="centerInside"
+         android:contentDescription="@string/cd_node_icon"
+         android:layout_marginStart="2dp"
+         android:id="@+id/tv_icon" />
+
+    <TextView
+         android:layout_height="wrap_content"
+         android:layout_width="0dp"
+         android:ellipsize="end"
+         android:textSize="13sp"
+         android:maxLines="1"
+         android:layout_weight="1"
+         android:id="@+id/tv_name" />
+
+    <ImageView
+         android:layout_height="12dp"
+         android:layout_width="12dp"
+         android:visibility="gone"
+         android:scaleType="centerInside"
+         android:contentDescription="@string/cd_badge_icon"
+         android:layout_marginStart="4dp"
+         android:id="@+id/tv_badge_icon" />
+
+    <TextView
+         android:layout_height="wrap_content"
+         android:layout_width="wrap_content"
+         android:visibility="gone"
+         android:textSize="10sp"
+         android:layout_marginStart="4dp"
+         android:id="@+id/tv_badge" />
+
+</LinearLayout>

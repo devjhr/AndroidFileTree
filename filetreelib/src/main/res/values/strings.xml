@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TreeView Explorer</string>
+    <string name="hint_search">Search files…</string>
+    <string name="cd_expand_arrow">Expand or collapse</string>
+    <string name="cd_node_icon">File or folder icon</string>
+    <string name="cd_badge_icon">Status badge</string>
+</resources>
