@@ -12,17 +12,31 @@ import ir.hanzodev1375.filetreelib.model.FilePayload;
 
 public abstract class BaseIconProvider implements IconProvider {
 
-  protected boolean isImageFile(@NonNull TreeNode node) {
-    String name = node.getName().toLowerCase();
+    protected boolean isRasterImageFile(@NonNull TreeNode node) {
+        String name = node.getName().toLowerCase();
+        return name.endsWith(".png")
+            || name.endsWith(".jpg")
+            || name.endsWith(".jpeg")
+            || name.endsWith(".webp")
+            || name.endsWith(".gif")
+            || name.endsWith(".bmp");
+    }
+    
+    protected boolean isSvgFile(@NonNull TreeNode node) {
+        return node.getName().toLowerCase().endsWith(".svg");
+    }
+    
+    protected boolean isVectorXmlFile(@NonNull TreeNode node) {
+        return node.getName().toLowerCase().endsWith(".xml");
+    }
 
-    return name.endsWith(".png")
-        || name.endsWith(".jpg")
-        || name.endsWith(".jpeg")
-        || name.endsWith(".webp")
-        || name.endsWith(".gif")
-        || name.endsWith(".bmp")
-        || name.endsWith(".svg");
-  }
+    protected boolean isApkFile(@NonNull TreeNode node) {
+        return node.getName().toLowerCase().endsWith(".apk");
+    }
+
+    protected boolean isAudioFile(@NonNull TreeNode node) {
+        return node.getName().toLowerCase().endsWith(".mp3");
+    }
 
   @Nullable
   protected String getFilePath(@NonNull TreeNode node) {

@@ -21,5 +21,9 @@ android {
 
 dependencies {
     implementation project(':filetreelib')
+    implementation project(':vectormaster')
     implementation libs.glide
+    implementation 'com.caverock:androidsvg-aar:1.4'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
+    
 }

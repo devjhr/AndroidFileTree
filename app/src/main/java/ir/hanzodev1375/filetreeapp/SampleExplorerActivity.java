@@ -259,18 +259,18 @@ public class SampleExplorerActivity extends AppCompatActivity {
                 isCut,
                 new TreeController.PasteCallback() {
                   @Override
-                  public void onPasted(@NonNull List<TreeNode> pastedNodes) {
-                    if (isCut) cb.clear();
-                    controller.clearSelection();
-                    Toast.makeText(
-                            SampleExplorerActivity.this,
-                            (isCut ? "Moved " : "Copied ")
-                                + nodes.size()
-                                + " item(s) to "
-                                + dest.getName(),
-                            Toast.LENGTH_SHORT)
-                        .show();
-                  }
+public void onPasted(@NonNull List<TreeNode> pastedNodes) {
+    cb.clear();                  // cut এবং copy উভয় ক্ষেত্রেই clipboard clear
+    controller.clearSelection(); // এটা selection listener trigger করবে → panel hide হবে
+    Toast.makeText(
+            SampleExplorerActivity.this,
+            (isCut ? "Moved " : "Copied ")
+                + nodes.size()
+                + " item(s) to "
+                + dest.getName(),
+            Toast.LENGTH_SHORT)
+        .show();
+}
 
                   @Override
                   public void onPasteFailed(@NonNull Exception error) {

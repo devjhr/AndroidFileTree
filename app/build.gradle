@@ -35,4 +35,6 @@ dependencies {
     implementation libs.androidx.constraintlayout
     implementation project(':filetreelib')
     implementation project(':filetreeglide')
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
+
 }
