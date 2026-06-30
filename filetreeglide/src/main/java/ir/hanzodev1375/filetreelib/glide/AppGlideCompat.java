@@ -17,7 +17,7 @@ import java.io.InputStream;
 import ir.hanzodev1375.filetreelib.glide.svg.SvgDecoder;
 
 @GlideModule
-public class AppGlide extends LibraryGlideModule {
+public class AppGlideCompat extends LibraryGlideModule {
   @Override
   public void registerComponents(
       @NonNull Context context, @NonNull Glide glide, @NonNull Registry registry) {
