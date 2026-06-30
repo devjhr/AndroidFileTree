@@ -57,8 +57,8 @@ public final class TreeNode {
   // Fields
   // -------------------------------------------------------------------------
 
-  /** Stable identifier — never changes for the lifetime of the node. */
-  @NonNull private final String id;
+  /** Stable identifier — by default never changes, but may be updated when the underlying path changes (e.g. rename). */
+  @NonNull private String id;
 
   /** Human-readable display name (filename, folder name, virtual label). */
   @NonNull private String name;
@@ -357,6 +357,18 @@ public final class TreeNode {
   @NonNull
   public String getId() {
     return id;
+  }
+
+  /**
+   * Updates the node ID, e.g. after a rename changes a path-based ID. Caller is responsible for
+   * invalidating any caches keyed on the old ID (via {@link #getId()}) *before* calling this, and
+   * for re-inserting this node into any {@code HashMap}/{@code HashSet} keyed by ID, since
+   * {@link #equals} and {@link #hashCode} are based on {@link #id} and mutating it while the node
+   * sits in a hash-based collection corrupts that collection's bucket placement.
+   */
+  public void setId(@NonNull String id) {
+    if (id.isEmpty()) throw new IllegalArgumentException("id must not be empty");
+    this.id = id;
   }
 
   /** Returns the display name of this node. */

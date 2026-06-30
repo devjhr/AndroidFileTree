@@ -1005,8 +1005,8 @@ public class TwoDScrollView extends FrameLayout {
     int childWidthMeasureSpec;
     int childHeightMeasureSpec;
 
-    childWidthMeasureSpec =
-        getChildMeasureSpec(parentWidthMeasureSpec, getPaddingLeft() + getPaddingRight(), lp.width);
+    // Both axes UNSPECIFIED: child can grow freely in both directions for 2D scroll
+    childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED);
     childHeightMeasureSpec = MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED);
 
     child.measure(childWidthMeasureSpec, childHeightMeasureSpec);
@@ -1020,6 +1020,7 @@ public class TwoDScrollView extends FrameLayout {
       int parentHeightMeasureSpec,
       int heightUsed) {
     final MarginLayoutParams lp = (MarginLayoutParams) child.getLayoutParams();
+    // Both axes UNSPECIFIED: child can grow freely in both directions for 2D scroll
     final int childWidthMeasureSpec =
         MeasureSpec.makeMeasureSpec(lp.leftMargin + lp.rightMargin, MeasureSpec.UNSPECIFIED);
     final int childHeightMeasureSpec =

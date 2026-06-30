@@ -274,9 +274,47 @@ public final class TreeController {
             dataProvider.renameNode(node, newName);
             mainHandler.post(
                 () -> {
+                  // Capture the old ID before mutating — the cache and selection map are
+                  // both keyed by the node's id-at-insertion-time, so we must invalidate /
+                  // re-key using the OLD id, not the new one.
+                  final String oldId = node.getId();
+                  final boolean wasSelected = node.isSelected();
+
+                  // Update node ID (absolute path) to reflect new name
+                  ir.hanzodev1375.filetreelib.model.FilePayload p =
+                      node.getPayload(ir.hanzodev1375.filetreelib.model.FilePayload.class);
+                  if (p != null) {
+                    String newPath = new java.io.File(
+                        new java.io.File(p.getAbsolutePath()).getParent(), newName)
+                        .getAbsolutePath();
+                    node.setId(newPath);
+                    // FilePayload.absolutePath is immutable — rebuild a fresh payload so
+                    // getFileName()/getExtension()/getParentPath() reflect the new name too.
+                    ir.hanzodev1375.filetreelib.model.FilePayload.Builder pb =
+                        new ir.hanzodev1375.filetreelib.model.FilePayload.Builder(newPath, p.isDirectory())
+                            .mimeType(p.getMimeType())
+                            .size(p.getSize())
+                            .lastModified(p.getLastModified())
+                            .symlink(p.isSymlink())
+                            .gitStatus(p.getGitStatus())
+                            .errorCount(p.getErrorCount())
+                            .warningCount(p.getWarningCount())
+                            .bookmarked(p.isBookmarked())
+                            .badge(p.getBadge());
+                    node.setPayload(pb.build());
+                  }
                   node.setName(newName);
+
+                  // selectionManager keys its internal map by id-at-select-time; since the id
+                  // just changed under it, remove+re-add so future deselect()/isSelected()
+                  // lookups by the new id still find this node.
+                  if (wasSelected) {
+                    selectionManager.deselect(node);
+                    selectionManager.select(node, SelectionManager.MODE_MULTI);
+                  }
+
                   model.notifyNodeChanged(node);
-                  cache.invalidate(node.getId());
+                  cache.invalidate(oldId);
                   if (callback != null) {
                     callback.onRenamed(node, oldName, newName);
                   }
@@ -308,6 +346,10 @@ public final class TreeController {
 
     List<TreeNode> toDelete = new ArrayList<>(selectionManager.getSelectedNodes());
     if (toDelete.isEmpty()) toDelete.add(node);
+    // Drop any selected node that is a descendant of another selected node — deleting the
+    // parent already removes it, so processing it again would fail against a path that no
+    // longer exists.
+    toDelete = ir.hanzodev1375.filetreelib.utils.TreeUtils.filterTopLevel(toDelete);
 
     final List<TreeNode> snapshot = new ArrayList<>(toDelete);
 
@@ -697,7 +739,10 @@ public final class TreeController {
       boolean isCut,
       @Nullable PasteCallback callback) {
 
-    final List<TreeNode> snapshot = new ArrayList<>(nodes);
+    // Same nested-selection problem as delete: if a folder and one of its own children are
+    // both in the clipboard, only process the folder — the child is carried along with it.
+    final List<TreeNode> snapshot =
+        ir.hanzodev1375.filetreelib.utils.TreeUtils.filterTopLevel(new ArrayList<>(nodes));
 
     backgroundExecutor.submit(
         () -> {
@@ -733,5 +778,66 @@ public final class TreeController {
                 });
           }
         });
+  }
+
+  // ─────────────────────────────────────────────
+  // applyMovedNode() — used by DragManager after a successful drag-and-drop move
+  // ─────────────────────────────────────────────
+
+  /**
+   * Updates the model and the moved node's identity (id + {@code FilePayload}) after {@code node}
+   * has already been physically moved on disk into {@code newParent} by the caller. Mirrors the
+   * id/payload refresh done in {@link #renameNode}, since the node's old absolute path is no
+   * longer valid once it has been moved.
+   *
+   * @param node the node that was moved (already relocated on disk by the caller)
+   * @param newParent the node's new parent
+   */
+  @MainThread
+  public void applyMovedNode(@NonNull TreeNode node, @NonNull TreeNode newParent) {
+    final String oldId = node.getId();
+    final boolean wasSelected = node.isSelected();
+
+    int newIndex = findAlphabeticalInsertIndex(newParent, node, node.getType());
+    model.moveNode(node, newParent, newIndex);
+
+    ir.hanzodev1375.filetreelib.model.FilePayload np =
+        newParent.getPayload(ir.hanzodev1375.filetreelib.model.FilePayload.class);
+    ir.hanzodev1375.filetreelib.model.FilePayload p =
+        node.getPayload(ir.hanzodev1375.filetreelib.model.FilePayload.class);
+    if (np != null && p != null) {
+      String newPath = new java.io.File(np.getAbsolutePath(), node.getName()).getAbsolutePath();
+      node.setId(newPath);
+      // FilePayload.absolutePath is immutable — rebuild a fresh payload, same as renameNode().
+      ir.hanzodev1375.filetreelib.model.FilePayload.Builder pb =
+          new ir.hanzodev1375.filetreelib.model.FilePayload.Builder(newPath, p.isDirectory())
+              .mimeType(p.getMimeType())
+              .size(p.getSize())
+              .lastModified(p.getLastModified())
+              .symlink(p.isSymlink())
+              .gitStatus(p.getGitStatus())
+              .errorCount(p.getErrorCount())
+              .warningCount(p.getWarningCount())
+              .bookmarked(p.isBookmarked())
+              .badge(p.getBadge());
+      node.setPayload(pb.build());
+
+      // A moved folder's already-loaded children still carry absolute paths rooted at the OLD
+      // location. Rather than rewriting every descendant's path in place, drop the cached subtree
+      // and mark it lazy-pending so it reloads fresh from disk (with correct paths) next expand.
+      if (p.isDirectory() && node.hasChildren()) {
+        node.clearChildren();
+        node.setHasChildren(true);
+        node.setLazyLoadPending(true);
+      }
+    }
+
+    if (wasSelected) {
+      selectionManager.deselect(node);
+      selectionManager.select(node, SelectionManager.MODE_MULTI);
+    }
+
+    cache.invalidate(oldId);
+    cache.invalidate(newParent.getId());
   }
 }

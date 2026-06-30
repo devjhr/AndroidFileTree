@@ -122,14 +122,14 @@ public class FileTreeProvider implements TreeDataProvider {
       throws Exception {
     FilePayload dp = destination.getPayload(FilePayload.class);
     if (dp == null) throw new IllegalStateException("No FilePayload on destination");
+    assertValidDestination(nodes, destination);
     for (TreeNode node : nodes) {
       FilePayload sp = node.getPayload(FilePayload.class);
       if (sp == null) continue;
       File src = new File(sp.getAbsolutePath());
-      File dst = new File(dp.getAbsolutePath(), src.getName());
-      if (!src.renameTo(dst)) {
-        copyRecursive(src, dst);
-      }
+      File dst = uniqueDestination(new File(dp.getAbsolutePath(), src.getName()));
+      // Always use copyRecursive — never renameTo, which would move (delete src)
+      copyRecursive(src, dst);
     }
   }
 
@@ -139,11 +139,12 @@ public class FileTreeProvider implements TreeDataProvider {
       throws Exception {
     FilePayload dp = destination.getPayload(FilePayload.class);
     if (dp == null) throw new IllegalStateException("No FilePayload on destination");
+    assertValidDestination(nodes, destination);
     for (TreeNode node : nodes) {
       FilePayload sp = node.getPayload(FilePayload.class);
       if (sp == null) continue;
       File src = new File(sp.getAbsolutePath());
-      File dst = new File(dp.getAbsolutePath(), src.getName());
+      File dst = uniqueDestination(new File(dp.getAbsolutePath(), src.getName()));
       if (!src.renameTo(dst)) {
         copyRecursive(src, dst);
         deleteRecursive(src);
@@ -152,6 +153,49 @@ public class FileTreeProvider implements TreeDataProvider {
   }
 
   // -------------------------------------------------------------------------
+  /**
+   * Throws if {@code destination} is one of the source nodes itself, or lives inside one of
+   * them — copying/moving a folder into its own subtree would make {@code copyRecursive} create
+   * the destination inside the very tree it is still reading from (infinite recursion / disk
+   * exhaustion / corrupted result).
+   */
+  private void assertValidDestination(@NonNull List<TreeNode> nodes, @NonNull TreeNode destination)
+      throws Exception {
+    for (TreeNode node : nodes) {
+      if (node.getId().equals(destination.getId()) || destination.isDescendantOf(node)) {
+        throw new Exception(
+            "Cannot move/copy '" + node.getName() + "' into itself or one of its own subfolders");
+      }
+    }
+  }
+
+  /**
+   * If {@code candidate} already exists, appends " (1)", " (2)", etc. (before the extension for
+   * files) until a free name is found, instead of silently overwriting the existing file/folder.
+   */
+  @NonNull
+  private File uniqueDestination(@NonNull File candidate) {
+    if (!candidate.exists()) return candidate;
+    String name = candidate.getName();
+    String base = name;
+    String ext = "";
+    if (!candidate.isDirectory()) {
+      int dot = name.lastIndexOf('.');
+      if (dot > 0) {
+        base = name.substring(0, dot);
+        ext = name.substring(dot);
+      }
+    }
+    File parent = candidate.getParentFile();
+    int n = 1;
+    File next;
+    do {
+      next = new File(parent, base + " (" + n + ")" + ext);
+      n++;
+    } while (next.exists());
+    return next;
+  }
+
   private boolean hasAnyChild(@NonNull File dir) {
     String[] list = dir.list();
     return list != null && list.length > 0;
@@ -192,12 +236,13 @@ public class FileTreeProvider implements TreeDataProvider {
       throws Exception {
     FilePayload dp = destination.getPayload(FilePayload.class);
     if (dp == null) throw new IllegalStateException("No FilePayload on destination");
+    assertValidDestination(nodes, destination);
     List<TreeNode> result = new ArrayList<>();
     for (TreeNode node : nodes) {
       FilePayload sp = node.getPayload(FilePayload.class);
       if (sp == null) continue;
       File src = new File(sp.getAbsolutePath());
-      File dst = new File(dp.getAbsolutePath(), src.getName());
+      File dst = uniqueDestination(new File(dp.getAbsolutePath(), src.getName()));
       if (isCut) {
         if (!src.renameTo(dst)) {
           copyRecursive(src, dst);

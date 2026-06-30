@@ -67,6 +67,8 @@ public final class TreeAdapter extends RecyclerView.Adapter<TreeViewHolder> {
 
   private boolean selectionMode = false;
 
+  private int diffRequestId = 0;
+
   private final ExecutorService diffExecutor =
       Executors.newSingleThreadExecutor(
           r -> {
@@ -198,7 +200,8 @@ public final class TreeAdapter extends RecyclerView.Adapter<TreeViewHolder> {
     if (!payloads.isEmpty()) {
       TreeNode node = currentList.get(position);
       holder.updateSelection(node.isSelected(), theme.getSelectedBg(), selectionMode);
-      holder.updateArrow(node.isExpanded());
+      holder.updateArrow(node);
+      holder.updateIcon(context, node, iconProvider);
     } else {
       onBindViewHolder(holder, position);
     }
@@ -236,12 +239,14 @@ public final class TreeAdapter extends RecyclerView.Adapter<TreeViewHolder> {
 
   public void submitNewList(@NonNull final List<TreeNode> newList) {
     final List<TreeNode> oldList = new ArrayList<>(currentList);
+    final int requestId = ++diffRequestId;
     diffExecutor.submit(
         () -> {
           DiffUtil.DiffResult result =
               DiffUtil.calculateDiff(new TreeDiffCallback(oldList, newList), true);
           mainHandler.post(
               () -> {
+                if (requestId != diffRequestId) return;
                 currentList = new ArrayList<>(newList);
                 result.dispatchUpdatesTo(this);
               });

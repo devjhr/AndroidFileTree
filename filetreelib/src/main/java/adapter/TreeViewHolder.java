@@ -159,8 +159,24 @@ public final class TreeViewHolder extends RecyclerView.ViewHolder {
     }
   }
 
-  public void updateArrow(boolean expanded) {
-    ivArrow.setRotation(expanded ? 90f : 0f);
+  public void updateArrow(@NonNull TreeNode node) {
+    if (node.isFile() || node.isLoadingPlaceholder()) {
+      ivArrow.setVisibility(View.INVISIBLE);
+      return;
+    }
+    ivArrow.setVisibility(node.hasChildren() ? View.VISIBLE : View.INVISIBLE);
+    ivArrow.setRotation(node.isExpanded() ? 90f : 0f);
+  }
+
+  public void updateIcon(
+      @NonNull android.content.Context context,
+      @NonNull TreeNode node,
+      @NonNull IconProvider iconProvider) {
+    try {
+      iconProvider.loadIcon(context, node, ivIcon);
+    } catch (Exception e) {
+      ivIcon.setImageResource(ir.hanzodev1375.filetreelib.R.drawable.ic_filetree_document);
+    }
   }
 
   public void setShowIconFolderAndFile(boolean show) {
