@@ -5,6 +5,7 @@ import android.content.res.TypedArray;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.ItemTouchHelper;
@@ -18,6 +19,7 @@ import ir.hanzodev1375.filetreelib.core.TreeNode;
 import ir.hanzodev1375.filetreelib.decoration.TreeDecoration;
 import ir.hanzodev1375.filetreelib.drag.DragManager;
 import ir.hanzodev1375.filetreelib.theme.ThemeManager;
+import ir.hanzodev1375.filetreelib.widget.TwoDScrollView;
 
 public final class TreeView extends RecyclerView {
 
@@ -57,7 +59,24 @@ public final class TreeView extends RecyclerView {
       a.recycle();
     }
 
-    setLayoutManager(new LinearLayoutManager(context));
+    setLayoutManager(new LinearLayoutManager(context) {
+      @Override
+      public boolean canScrollHorizontally() {
+        // Horizontal scroll is handled by TwoDScrollView wrapper, not RecyclerView
+        return false;
+      }
+
+      @Override
+      public void onMeasure(
+          @NonNull RecyclerView.Recycler recycler,
+          @NonNull RecyclerView.State state,
+          int widthSpec,
+          int heightSpec) {
+        // Give children UNSPECIFIED width so they can grow beyond the screen
+        widthSpec = MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED);
+        super.onMeasure(recycler, state, widthSpec, heightSpec);
+      }
+    });
     setHasFixedSize(false);
 
     animator = new TreeAnimator();
@@ -160,6 +179,30 @@ public final class TreeView extends RecyclerView {
         return true;
     }
     return super.dispatchKeyEvent(event);
+  }
+
+  /**
+   * Returns this TreeView wrapped inside a TwoDScrollView for both
+   * vertical and horizontal scrolling. Call this instead of using
+   * TreeView directly in your layout, or wrap it in XML manually.
+   *
+   * Usage:
+   *   View scrollable = treeView.getScrollableView();
+   *   container.addView(scrollable);
+   */
+  public View getScrollableView() {
+    TwoDScrollView scrollView = new TwoDScrollView(getContext());
+    scrollView.setLayoutParams(new ViewGroup.LayoutParams(
+        ViewGroup.LayoutParams.MATCH_PARENT,
+        ViewGroup.LayoutParams.MATCH_PARENT));
+    if (getParent() != null) {
+      ((ViewGroup) getParent()).removeView(this);
+    }
+    setLayoutParams(new ViewGroup.LayoutParams(
+        ViewGroup.LayoutParams.WRAP_CONTENT,
+        ViewGroup.LayoutParams.MATCH_PARENT));
+    scrollView.addView(this);
+    return scrollView;
   }
 
   public void setShowTreeLines(boolean show) {
