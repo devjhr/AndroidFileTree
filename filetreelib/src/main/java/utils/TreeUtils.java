@@ -138,6 +138,28 @@ public final class TreeUtils {
     return descendantId.startsWith(ancestorId + "/");
   }
 
+  /**
+   * Filters out any node in {@code nodes} that is a descendant of another node also present in
+   * {@code nodes}. Use this before batch move/copy/delete operations so that a selected folder
+   * and one of its own selected children aren't both processed independently (the child operation
+   * would fail or duplicate after the parent operation already covers it).
+   */
+  @NonNull
+  public static List<TreeNode> filterTopLevel(@NonNull List<TreeNode> nodes) {
+    List<TreeNode> result = new ArrayList<>();
+    for (TreeNode candidate : nodes) {
+      boolean isNested = false;
+      for (TreeNode other : nodes) {
+        if (other != candidate && candidate.isDescendantOf(other)) {
+          isNested = true;
+          break;
+        }
+      }
+      if (!isNested) result.add(candidate);
+    }
+    return result;
+  }
+
   /** Finds the lowest common ancestor of two nodes. */
   @Nullable
   public static TreeNode lowestCommonAncestor(@NonNull TreeNode a, @NonNull TreeNode b) {

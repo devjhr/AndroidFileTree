@@ -199,6 +199,8 @@ public final class TreeAdapter extends RecyclerView.Adapter<TreeViewHolder> {
       TreeNode node = currentList.get(position);
       holder.updateSelection(node.isSelected(), theme.getSelectedBg(), selectionMode);
       holder.updateArrow(node.isExpanded());
+      // Also reload icon so rename (extension change) reflects immediately
+      holder.updateIcon(context, node, iconProvider);
     } else {
       onBindViewHolder(holder, position);
     }

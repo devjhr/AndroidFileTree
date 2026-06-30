@@ -163,6 +163,17 @@ public final class TreeViewHolder extends RecyclerView.ViewHolder {
     ivArrow.setRotation(expanded ? 90f : 0f);
   }
 
+  public void updateIcon(
+      @NonNull android.content.Context context,
+      @NonNull TreeNode node,
+      @NonNull IconProvider iconProvider) {
+    try {
+      iconProvider.loadIcon(context, node, ivIcon);
+    } catch (Exception e) {
+      ivIcon.setImageResource(ir.hanzodev1375.filetreelib.R.drawable.ic_filetree_document);
+    }
+  }
+
   public void setShowIconFolderAndFile(boolean show) {
     this.showItem = show;
   }

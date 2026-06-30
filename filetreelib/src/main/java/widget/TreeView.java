@@ -1,6 +1,8 @@
 package ir.hanzodev1375.filetreelib.widget;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.content.res.TypedArray;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
@@ -118,6 +120,48 @@ public final class TreeView extends RecyclerView {
 
     controller.getExpandManager().rebuildVisibleList(controller.getModel().getRoot());
     treeAdapter.submitNewList(controller.getVisibleList().snapshot());
+
+    // Sync adapter whenever the model changes (delete, rename, create, move).
+    // Debounced: compound ops like cut (remove + insert) fire two events back-to-back.
+    // removeCallbacks+post ensures only one rebuild runs after both events settle.
+    final Handler modelSyncHandler = new Handler(Looper.getMainLooper());
+    final Runnable modelSyncRunnable = () -> {
+      controller.getExpandManager().rebuildVisibleList(controller.getModel().getRoot());
+      treeAdapter.submitNewList(controller.getVisibleList().snapshot());
+    };
+
+    controller.getModel().addListener(new ir.hanzodev1375.filetreelib.core.TreeModel.TreeModelListener() {
+      @Override
+      public void onNodesInserted(
+          @NonNull ir.hanzodev1375.filetreelib.core.TreeNode parent,
+          @NonNull java.util.List<ir.hanzodev1375.filetreelib.core.TreeNode> insertedNodes,
+          int startIndex) {
+        modelSyncHandler.removeCallbacks(modelSyncRunnable);
+        modelSyncHandler.post(modelSyncRunnable);
+      }
+
+      @Override
+      public void onNodesRemoved(
+          @NonNull ir.hanzodev1375.filetreelib.core.TreeNode parent,
+          @NonNull java.util.List<ir.hanzodev1375.filetreelib.core.TreeNode> removedNodes,
+          int startIndex) {
+        modelSyncHandler.removeCallbacks(modelSyncRunnable);
+        modelSyncHandler.post(modelSyncRunnable);
+      }
+
+      @Override
+      public void onNodesChanged(
+          @NonNull java.util.List<ir.hanzodev1375.filetreelib.core.TreeNode> changedNodes) {
+        // Name/icon change only — no structure rebuild needed
+        treeAdapter.submitNewList(controller.getVisibleList().snapshot());
+      }
+
+      @Override
+      public void onStructureChanged() {
+        modelSyncHandler.removeCallbacks(modelSyncRunnable);
+        modelSyncHandler.post(modelSyncRunnable);
+      }
+    });
   }
 
   /** DragManager رو وصل کن — بعد از setup() صدا بزن. */

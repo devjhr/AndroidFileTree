@@ -191,7 +191,7 @@ public class SampleExplorerActivity extends AppCompatActivity {
     treeView.setup(controller, theme);
     adapter = treeView.getTreeAdapter();
 
-    DragManager dragManager = new DragManager(provider);
+    DragManager dragManager = new DragManager(controller);
     treeView.attachDragManager(dragManager);
 
     if (adapter != null) {
@@ -252,38 +252,35 @@ public class SampleExplorerActivity extends AppCompatActivity {
             List<TreeNode> nodes = new ArrayList<>(cb.getClipboard());
             boolean isCut = cb.isCut();
 
-            new Thread(
-                    () -> {
-                      try {
-                        if (isCut) {
-                          controller.getDataProvider().moveNodes(nodes, dest);
-                        } else {
-                          controller.getDataProvider().copyNodes(nodes, dest);
-                        }
-                        runOnUiThread(
-                            () -> {
-                              if (isCut) cb.clear();
-                              controller.clearSelection();
-                              Toast.makeText(
-                                      SampleExplorerActivity.this,
-                                      (isCut ? "Moved " : "Copied ")
-                                          + nodes.size()
-                                          + " item(s) to "
-                                          + dest.getName(),
-                                      Toast.LENGTH_SHORT)
-                                  .show();
-                            });
-                      } catch (Exception e) {
-                        runOnUiThread(
-                            () ->
-                                Toast.makeText(
-                                        SampleExplorerActivity.this,
-                                        "Paste failed: " + e.getMessage(),
-                                        Toast.LENGTH_SHORT)
-                                    .show());
-                      }
-                    })
-                .start();
+            // Use controller.pasteNodes() so model events fire and UI updates
+            controller.pasteNodes(
+                dest,
+                nodes,
+                isCut,
+                new TreeController.PasteCallback() {
+                  @Override
+                  public void onPasted(@NonNull List<TreeNode> pastedNodes) {
+                    if (isCut) cb.clear();
+                    controller.clearSelection();
+                    Toast.makeText(
+                            SampleExplorerActivity.this,
+                            (isCut ? "Moved " : "Copied ")
+                                + nodes.size()
+                                + " item(s) to "
+                                + dest.getName(),
+                            Toast.LENGTH_SHORT)
+                        .show();
+                  }
+
+                  @Override
+                  public void onPasteFailed(@NonNull Exception error) {
+                    Toast.makeText(
+                            SampleExplorerActivity.this,
+                            "Paste failed: " + error.getMessage(),
+                            Toast.LENGTH_SHORT)
+                        .show();
+                  }
+                });
           }
 
           @Override
@@ -299,6 +296,7 @@ public class SampleExplorerActivity extends AppCompatActivity {
                 .setPositiveButton(
                     "Delete",
                     (d, w) ->
+                        // Pass first node; deleteNode() internally uses all selected nodes
                         controller.deleteNode(
                             nodes.get(0),
                             new TreeController.DeleteCallback() {
