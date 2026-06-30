@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+     xmlns:android="http://schemas.android.com/apk/res/android"
+     xmlns:app="http://schemas.android.com/apk/res-auto"
+     android:layout_height="match_parent"
+     android:layout_width="match_parent"
+     android:orientation="vertical">
+
+    <com.google.android.material.textfield.TextInputLayout
+         android:layout_height="wrap_content"
+         android:layout_marginEnd="4dp"
+         android:layout_marginStart="4dp"
+         android:layout_width="match_parent">
+
+        <com.google.android.material.textfield.TextInputEditText
+             android:layout_height="match_parent"
+             android:layout_width="match_parent"
+             android:paddingEnd="12dp"
+             android:imeOptions="actionSearch"
+             android:textSize="13sp"
+             android:singleLine="true"
+             android:inputType="text"
+             android:id="@+id/et_search" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <ir.hanzodev1375.filetreelib.widget.TwoDScrollView
+         android:layout_height="0dp"
+         android:layout_width="match_parent"
+         android:layout_weight="1">
+
+        <ir.hanzodev1375.filetreelib.widget.TreeView
+             android:layout_height="wrap_content"
+             android:layout_width="wrap_content"
+             app:tv_animateDuration="180"
+             app:tv_showTreeLines="true"
+             app:tv_animateExpand="true"
+             app:tv_indentWidth="20dp"
+             android:id="@+id/tree_view" />
+
+    </ir.hanzodev1375.filetreelib.widget.TwoDScrollView>
+
+    <ir.hanzodev1375.filetreelib.widget.SelectionActionPanel
+         android:layout_height="wrap_content"
+         android:layout_width="match_parent"
+         android:visibility="gone"
+         android:background="?colorSurface"
+         android:elevation="8dp"
+         android:id="@+id/selectionPanel" />
+
+</LinearLayout>

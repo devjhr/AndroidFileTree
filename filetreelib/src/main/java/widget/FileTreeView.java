@@ -1,60 +1,44 @@
-package ir.hanzodev1375.filetreeapp;
+package ir.hanzodev1375.filetreelib.widget;
 
-import android.Manifest;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.graphics.Color;
-import android.net.Uri;
-import android.os.Build;
-import android.os.Bundle;
-import android.os.Environment;
-import android.provider.Settings;
+import android.app.Activity;
+import android.content.Context;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.EditText;
-import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.util.AttributeSet;
 import android.widget.PopupMenu;
-import android.widget.Toast;
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-
-import com.bumptech.glide.Glide;
-import ir.hanzodev1375.filetreelib.FileIconGlide;
-import ir.hanzodev1375.filetreelib.drag.DragManager;
-import ir.hanzodev1375.filetreelib.widget.TreeView;
-import ir.hanzodev1375.filetreelib.widget.SelectionActionPanel;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import ir.hanzodev1375.filetreelib.R;
 import ir.hanzodev1375.filetreelib.core.TreeController;
 import ir.hanzodev1375.filetreelib.adapter.TreeAdapter;
+import ir.hanzodev1375.filetreelib.icons.IconProvider;
+import ir.hanzodev1375.filetreelib.model.FilePayload;
+import ir.hanzodev1375.filetreelib.core.TreeModel;
+import ir.hanzodev1375.filetreelib.provider.FileTreeProvider;
+import ir.hanzodev1375.filetreelib.cache.TreeCache;
+import ir.hanzodev1375.filetreelib.drag.DragManager;
+import android.widget.Toast;
 import ir.hanzodev1375.filetreelib.theme.ThemeManager;
 import ir.hanzodev1375.filetreelib.clipboard.ClipboardManager;
 import ir.hanzodev1375.filetreelib.filesystem.FileWatcher;
 import ir.hanzodev1375.filetreelib.search.TreeSearchEngine;
 import ir.hanzodev1375.filetreelib.search.TreeFilter;
-import ir.hanzodev1375.filetreelib.core.TreeNode;
-import ir.hanzodev1375.filetreelib.model.FilePayload;
-import ir.hanzodev1375.filetreelib.core.TreeModel;
-import ir.hanzodev1375.filetreelib.provider.FileTreeProvider;
-import ir.hanzodev1375.filetreelib.cache.TreeCache;
-import ir.hanzodev1375.filetreelib.core.TreeState;
-import ir.hanzodev1375.filetreelib.model.SearchResult;
-
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import ir.hanzodev1375.filetreelib.model.SearchResult;
+import ir.hanzodev1375.filetreelib.core.TreeNode;
+import java.io.File;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class SampleExplorerActivity extends AppCompatActivity {
-
-  private static final int PERM_REQUEST_LEGACY = 1001;
-  private static final int PERM_REQUEST_ALL_FILES = 1002;
-  private static final String KEY_TREE_STATE = "tree_state";
-
+public class FileTreeView extends LinearLayout {
+  private String nodePath;
   private TreeView treeView;
   private SelectionActionPanel selectionPanel;
   private TreeController controller;
@@ -65,26 +49,40 @@ public class SampleExplorerActivity extends AppCompatActivity {
   private TreeSearchEngine searchEngine;
   private TreeFilter treeFilter;
   private ExecutorService searchExecutor;
-
+  private List<TreeNode> fullVisibleSnapshot = null;
   private TreeNode lastOpenedFolder = null;
-  private Bundle pendingSavedState = null;
 
-  @Override
-  protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_sample_explorer);
+  public FileTreeView(Context context) {
+    super(context);
+    init();
+  }
 
-    treeView = findViewById(R.id.tree_view);
-    selectionPanel = findViewById(R.id.selectionPanel);
-    EditText etSearch = findViewById(R.id.et_search);
+  public FileTreeView(Context context, AttributeSet attributeset) {
+    super(context, attributeset);
+    init();
+  }
 
-    theme = new ThemeManager(this);
+  public FileTreeView(Context context, AttributeSet attributeset, int defStyle) {
+    super(context, attributeset, defStyle);
+    init();
+  }
+
+  void init() {
+    View v = LayoutInflater.from(getContext()).inflate(R.layout.layout_nodeview, null, false);
+    removeAllViews();
+    if (v != null) {
+      addView(v);
+    }
+    treeView = v.findViewById(R.id.tree_view);
+    selectionPanel = v.findViewById(R.id.selectionPanel);
+    EditText etSearch = v.findViewById(R.id.et_search);
+
+    theme = new ThemeManager(getContext());
     clipboard = new ClipboardManager();
     fileWatcher = new FileWatcher();
     searchEngine = new TreeSearchEngine();
     treeFilter = new TreeFilter();
-    searchExecutor = Executors.newSingleThreadExecutor();
-
+    searchExecutor = Executors.newSingleThreadScheduledExecutor();
     etSearch.addTextChangedListener(
         new TextWatcher() {
           @Override
@@ -98,78 +96,57 @@ public class SampleExplorerActivity extends AppCompatActivity {
           @Override
           public void afterTextChanged(Editable s) {}
         });
-
-    pendingSavedState = savedInstanceState;
-    checkPermissionsAndLoad();
   }
 
-  private void checkPermissionsAndLoad() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-      if (Environment.isExternalStorageManager()) {
-        loadTree(pendingSavedState);
-      } else {
-        new AlertDialog.Builder(this)
-            .setTitle("Storage Permission")
-            .setMessage("This app needs access to all files to browse the filesystem.")
-            .setPositiveButton(
-                "Grant",
-                (d, w) -> {
-                  Intent intent =
-                      new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
-                  intent.setData(Uri.parse("package:" + getPackageName()));
-                  startActivityForResult(intent, PERM_REQUEST_ALL_FILES);
-                })
-            .setNegativeButton("Cancel", null)
-            .show();
+  public String getNodePath() {
+    return this.nodePath;
+  }
+
+  public void setNodePath(String nodePath) {
+    this.nodePath = nodePath;
+  }
+
+  private void performSearch(@NonNull String query) {
+    if (query.isEmpty()) {
+      if (adapter != null) {
+        adapter.clearSearch();
+        if (fullVisibleSnapshot != null) {
+          adapter.submitNewList(fullVisibleSnapshot);
+          fullVisibleSnapshot = null;
+        } else {
+          adapter.submitNewList(controller.getVisibleList().snapshot());
+        }
       }
-    } else {
-      boolean read =
-          ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-              == PackageManager.PERMISSION_GRANTED;
-      boolean write =
-          ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-              == PackageManager.PERMISSION_GRANTED;
-      if (read && write) {
-        loadTree(pendingSavedState);
-      } else {
-        ActivityCompat.requestPermissions(
-            this,
-            new String[] {
-              Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE
-            },
-            PERM_REQUEST_LEGACY);
-      }
+      return;
     }
-  }
-
-  @Override
-  public void onRequestPermissionsResult(
-      int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    if (requestCode == PERM_REQUEST_LEGACY) {
-      if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-        loadTree(pendingSavedState);
-      } else {
-        Toast.makeText(this, "Storage permission denied", Toast.LENGTH_SHORT).show();
-      }
+    if (fullVisibleSnapshot == null) {
+      fullVisibleSnapshot = new ArrayList<>(controller.getVisibleList().snapshot());
     }
+    searchExecutor.submit(
+        () -> {
+          List<SearchResult> results = searchEngine.search(controller.getModel().getRoot(), query);
+          Set<String> matchingIds = new HashSet<>();
+          for (SearchResult r : results) matchingIds.add(r.getNodeId());
+          List<TreeNode> filteredList =
+              treeFilter.filter(controller.getModel().getRoot(), matchingIds);
+          ((Activity) getContext())
+              .runOnUiThread(
+                  () -> {
+                    if (adapter != null) {
+                      adapter.setSearchResults(results);
+                      adapter.submitNewList(filteredList);
+                    }
+                  });
+        });
   }
 
-  @Override
-  protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-    super.onActivityResult(requestCode, resultCode, data);
-    if (requestCode == PERM_REQUEST_ALL_FILES) {
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
-          && Environment.isExternalStorageManager()) {
-        loadTree(pendingSavedState);
-      } else {
-        Toast.makeText(this, "Storage permission denied", Toast.LENGTH_SHORT).show();
-      }
-    }
+  private void refreshParent(@NonNull String changedPath) {
+    String parent = new File(changedPath).getParent();
+    if (parent != null) controller.getVisibleList();
   }
 
-  private void loadTree(Bundle savedState) {
-    File rootDir = new File("/storage/emulated/0");
+  public void loadTree() {
+    File rootDir = new File(getNodePath());
     FilePayload rootPayload = new FilePayload.Builder(rootDir.getAbsolutePath(), true).build();
     TreeNode rootNode = TreeNode.root();
 
@@ -196,7 +173,6 @@ public class SampleExplorerActivity extends AppCompatActivity {
 
     if (adapter != null) {
       adapter.setClipboardManager(clipboard);
-      adapter.setIconProvider(new FileIconGlide());
 
       adapter.setOnNodeClickListener(
           (node, view) -> {
@@ -204,15 +180,7 @@ public class SampleExplorerActivity extends AppCompatActivity {
               lastOpenedFolder = node;
               controller.toggleNode(node);
             } else {
-              Toast.makeText(this, "Open: " + node.getName(), Toast.LENGTH_SHORT).show();
-              if (node.getAbsolutePath() != null && node.getAbsolutePath().endsWith(".png")) {
-                ImageView img = new ImageView(this);
-                img.setLayoutParams(
-                    new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1000));
-                img.setBackgroundColor(Color.RED);
-                new AlertDialog.Builder(this).setTitle("rjejek").setView(img).show();
-                Glide.with(this).load(new File(node.getAbsolutePath())).into(img);
-              }
+              Toast.makeText(getContext(), "Open: " + node.getName(), Toast.LENGTH_SHORT).show();
             }
           });
     }
@@ -224,7 +192,7 @@ public class SampleExplorerActivity extends AppCompatActivity {
           @Override
           public void onCopy(@NonNull List<TreeNode> nodes) {
             Toast.makeText(
-                    SampleExplorerActivity.this,
+                    getContext(),
                     nodes.size() + " item(s) copied — open a folder then tap paste",
                     Toast.LENGTH_SHORT)
                 .show();
@@ -233,7 +201,7 @@ public class SampleExplorerActivity extends AppCompatActivity {
           @Override
           public void onCut(@NonNull List<TreeNode> nodes) {
             Toast.makeText(
-                    SampleExplorerActivity.this,
+                    getContext(),
                     nodes.size() + " item(s) cut — open a folder then tap paste",
                     Toast.LENGTH_SHORT)
                 .show();
@@ -263,7 +231,7 @@ public class SampleExplorerActivity extends AppCompatActivity {
                     controller
                         .clearSelection(); // এটা selection listener trigger করবে → panel hide হবে
                     Toast.makeText(
-                            SampleExplorerActivity.this,
+                            getContext(),
                             (isCut ? "Moved " : "Copied ")
                                 + nodes.size()
                                 + " item(s) to "
@@ -275,9 +243,7 @@ public class SampleExplorerActivity extends AppCompatActivity {
                   @Override
                   public void onPasteFailed(@NonNull Exception error) {
                     Toast.makeText(
-                            SampleExplorerActivity.this,
-                            "Paste failed: " + error.getMessage(),
-                            Toast.LENGTH_SHORT)
+                            getContext(), "Paste failed: " + error.getMessage(), Toast.LENGTH_SHORT)
                         .show();
                   }
                 });
@@ -290,7 +256,7 @@ public class SampleExplorerActivity extends AppCompatActivity {
 
           @Override
           public void onDelete(@NonNull List<TreeNode> nodes) {
-            new AlertDialog.Builder(SampleExplorerActivity.this)
+            new MaterialAlertDialogBuilder(getContext())
                 .setTitle("Delete")
                 .setMessage("Delete " + nodes.size() + " item(s)?")
                 .setPositiveButton(
@@ -302,16 +268,14 @@ public class SampleExplorerActivity extends AppCompatActivity {
                             new TreeController.DeleteCallback() {
                               @Override
                               public void onDeleted(@NonNull List<TreeNode> deleted) {
-                                Toast.makeText(
-                                        SampleExplorerActivity.this, "Deleted", Toast.LENGTH_SHORT)
-                                    .show();
+                                Toast.makeText(getContext(), "Deleted", Toast.LENGTH_SHORT).show();
                               }
 
                               @Override
                               public void onDeleteFailed(
                                   @NonNull List<TreeNode> n, @NonNull Exception e) {
                                 Toast.makeText(
-                                        SampleExplorerActivity.this,
+                                        getContext(),
                                         "Delete failed: " + e.getMessage(),
                                         Toast.LENGTH_SHORT)
                                     .show();
@@ -323,7 +287,7 @@ public class SampleExplorerActivity extends AppCompatActivity {
 
           @Override
           public void onMore(@NonNull List<TreeNode> nodes, @NonNull View anchor) {
-            PopupMenu popup = new PopupMenu(SampleExplorerActivity.this, anchor);
+            PopupMenu popup = new PopupMenu(getContext(), anchor);
             popup.getMenu().add(0, 1, 0, "Rename");
             popup.getMenu().add(0, 2, 0, "New Folder");
             popup.getMenu().add(0, 3, 0, "New File");
@@ -361,11 +325,6 @@ public class SampleExplorerActivity extends AppCompatActivity {
           public void onSelectionCleared() {}
         });
 
-    if (savedState != null) {
-      TreeState state = savedState.getParcelable(KEY_TREE_STATE);
-      if (state != null) controller.restoreState(state);
-    }
-
     fileWatcher.addListener(
         new FileWatcher.FileChangeListener() {
           @Override
@@ -390,9 +349,9 @@ public class SampleExplorerActivity extends AppCompatActivity {
   }
 
   private void showRenameDialog(@NonNull TreeNode node) {
-    EditText et = new EditText(this);
+    EditText et = new EditText(getContext());
     et.setText(node.getName());
-    new AlertDialog.Builder(this)
+    new MaterialAlertDialogBuilder(getContext())
         .setTitle("Rename")
         .setView(et)
         .setPositiveButton(
@@ -407,16 +366,12 @@ public class SampleExplorerActivity extends AppCompatActivity {
                       @Override
                       public void onRenamed(
                           @NonNull TreeNode n, @NonNull String o, @NonNull String nw) {
-                        Toast.makeText(
-                                SampleExplorerActivity.this, "Renamed to " + nw, Toast.LENGTH_SHORT)
-                            .show();
+                        Toast.makeText(getContext(), "Renamed to " + nw, Toast.LENGTH_SHORT).show();
                       }
 
                       @Override
                       public void onRenameFailed(@NonNull TreeNode n, @NonNull Exception e) {
-                        Toast.makeText(
-                                SampleExplorerActivity.this, "Rename failed", Toast.LENGTH_SHORT)
-                            .show();
+                        Toast.makeText(getContext(), "Rename failed", Toast.LENGTH_SHORT).show();
                       }
                     });
               }
@@ -426,9 +381,9 @@ public class SampleExplorerActivity extends AppCompatActivity {
   }
 
   private void showCreateDialog(@NonNull TreeNode parent, int type) {
-    EditText et = new EditText(this);
+    EditText et = new EditText(getContext());
     et.setHint(type == TreeNode.TYPE_FOLDER ? "Folder name" : "File name");
-    new AlertDialog.Builder(this)
+    new MaterialAlertDialogBuilder(getContext())
         .setTitle(type == TreeNode.TYPE_FOLDER ? "New Folder" : "New File")
         .setView(et)
         .setPositiveButton(
@@ -440,16 +395,13 @@ public class SampleExplorerActivity extends AppCompatActivity {
                     new TreeController.CreateCallback() {
                       @Override
                       public void onCreated(@NonNull TreeNode n) {
-                        Toast.makeText(SampleExplorerActivity.this, "Created", Toast.LENGTH_SHORT)
-                            .show();
+                        Toast.makeText(getContext(), "Created", Toast.LENGTH_SHORT).show();
                       }
 
                       @Override
                       public void onCreateFailed(@NonNull String nm, @NonNull Exception e) {
                         Toast.makeText(
-                                SampleExplorerActivity.this,
-                                "Failed: " + e.getMessage(),
-                                Toast.LENGTH_SHORT)
+                                getContext(), "Failed: " + e.getMessage(), Toast.LENGTH_SHORT)
                             .show();
                       }
                     };
@@ -461,68 +413,60 @@ public class SampleExplorerActivity extends AppCompatActivity {
         .show();
   }
 
-  private List<TreeNode> fullVisibleSnapshot = null;
-
-  private void performSearch(@NonNull String query) {
-    if (query.isEmpty()) {
-      if (adapter != null) {
-        adapter.clearSearch();
-        if (fullVisibleSnapshot != null) {
-          adapter.submitNewList(fullVisibleSnapshot);
-          fullVisibleSnapshot = null;
-        } else {
-          adapter.submitNewList(controller.getVisibleList().snapshot());
-        }
-      }
-      return;
-    }
-    if (fullVisibleSnapshot == null) {
-      fullVisibleSnapshot = new ArrayList<>(controller.getVisibleList().snapshot());
-    }
-    searchExecutor.submit(
-        () -> {
-          List<SearchResult> results = searchEngine.search(controller.getModel().getRoot(), query);
-          java.util.Set<String> matchingIds = new java.util.HashSet<>();
-          for (SearchResult r : results) matchingIds.add(r.getNodeId());
-          List<TreeNode> filteredList =
-              treeFilter.filter(controller.getModel().getRoot(), matchingIds);
-          runOnUiThread(
-              () -> {
-                if (adapter != null) {
-                  adapter.setSearchResults(results);
-                  adapter.submitNewList(filteredList);
-                }
-              });
-        });
+  public void setIconProvider(IconProvider ic) {
+    adapter.setIconProvider(ic);
   }
 
-  private void refreshParent(@NonNull String changedPath) {
-    String parent = new File(changedPath).getParent();
-    if (parent != null) controller.getVisibleList();
+  /**
+   * Sets the git status of a file/folder — the status of one of FilePayload.GIT_* or OR multiple
+   * (e.g. FilePayload.GIT_MODIFIED | FilePayload.GIT_STAGED). Determining which badge
+   * (ic_badge_git_modified / staged / conflict) to show is automatic, in
+   * DefaultIconProvider.getBadgeIcon() is done from this status — here we just set the status and
+   * refresh the row. It should be called on the Main thread.
+   *
+   * @param absolutePath Absolute path of the file/folder (same id as the node in the tree)
+   * @param gitStatus Bitmask from FilePayload.GIT_*
+   */
+  public void setGitStatus(@NonNull String absolutePath, int gitStatus) {
+    if (controller == null) return;
+    TreeNode node = controller.getModel().findNodeById(absolutePath);
+    if (node == null) return;
+    FilePayload payload = node.getPayload(FilePayload.class);
+    if (payload == null) return;
+    payload.setGitStatus(gitStatus);
+    controller.getModel().notifyNodeChanged(node);
+    if (adapter != null) adapter.refreshNode(node.getId());
   }
 
-  @Override
-  public void onBackPressed() {
-    if (selectionPanel != null && selectionPanel.isSelectionActive()) {
-      if (clipboard != null) clipboard.clear();
-      controller.clearSelection();
-    } else {
-      super.onBackPressed();
-    }
-  }
+  public void putDestroy() {
 
-  @Override
-  protected void onSaveInstanceState(@NonNull Bundle out) {
-    super.onSaveInstanceState(out);
-    if (controller != null) out.putParcelable(KEY_TREE_STATE, controller.saveState());
-  }
-
-  @Override
-  protected void onDestroy() {
-    super.onDestroy();
     if (selectionPanel != null) selectionPanel.detach();
     fileWatcher.unwatchAll();
     searchExecutor.shutdownNow();
     if (controller != null) controller.destroy();
+  }
+
+  public SelectionActionPanel getSelectionPanel() {
+    return this.selectionPanel;
+  }
+
+  public void setSelectionPanel(SelectionActionPanel selectionPanel) {
+    this.selectionPanel = selectionPanel;
+  }
+
+  public TreeAdapter getAdapter() {
+    return this.adapter;
+  }
+
+  public void setAdapter(TreeAdapter adapter) {
+    this.adapter = adapter;
+  }
+
+  public ThemeManager getTheme() {
+    return this.theme;
+  }
+
+  public void setTheme(ThemeManager theme) {
+    this.theme = theme;
   }
 }

@@ -1,35 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-  <style name="Theme.TreeView.Dark" parent="Theme.Material3.Dark.NoActionBar">
+    <style
+        name="Theme.TreeView.Dark"
+        parent="Theme.Material3.Dark.NoActionBar"
+        
+    >
 
-    <item name="tv_textColor">?attr/colorOnSurface</item>
-    <item name="tv_selectedBackground">?attr/colorSecondaryContainer</item>
-    <item name="tv_hoveredBackground">?attr/colorSurfaceContainerHigh</item>
-    <item name="tv_treeLineColor">?attr/colorOutlineVariant</item>
-    <item name="tv_searchHighlightColor">?attr/colorTertiaryContainer</item>
-    <item name="tv_gitModifiedColor">?attr/colorTertiary</item>
-    <item name="tv_gitAddedColor">?attr/colorPrimary</item>
-    <item name="tv_gitDeletedColor">?attr/colorError</item>
-    <item name="tv_errorColor">?attr/colorError</item>
-    <item name="android:windowBackground">?attr/colorSurface</item>
+        <item name="tv_textColor">?attr/colorOnSurface</item>
+        <item name="tv_selectedBackground">?attr/colorSecondaryContainer</item>
+        <item name="tv_hoveredBackground">?attr/colorSurfaceContainerHigh</item>
+        <item name="tv_treeLineColor">?attr/colorOutlineVariant</item>
+        <item name="tv_searchHighlightColor">?attr/colorTertiaryContainer</item>
+        <item name="tv_gitModifiedColor">?attr/colorTertiary</item>
+        <item name="tv_gitAddedColor">?attr/colorPrimary</item>
+        <item name="tv_gitDeletedColor">?attr/colorError</item>
+        <item name="tv_errorColor">?attr/colorError</item>
+        <item name="android:windowBackground">?attr/colorSurface</item>
+        <item name="panelBackgrounds">?attr/colorSurface</item>
+        <item name="panelTextColor">?attr/colorPrimary</item>
+        <item name="panelColorFilter">?attr/colorPrimary</item>
+        <item name="panelDividerColor">?attr/colorOnSurface</item>
 
-  </style>
+    </style>
 
-  <style name="Theme.TreeView.Light" parent="Theme.Material3.Light.NoActionBar">
+    <style
+        name="Theme.TreeView.Light"
+        parent="Theme.Material3.Light.NoActionBar"
+        
+    >
 
-    <item name="tv_textColor">?attr/colorOnSurface</item>
-    <item name="tv_selectedBackground">?attr/colorSecondaryContainer</item>
-    <item name="tv_hoveredBackground">?attr/colorSurfaceContainerHigh</item>
-    <item name="tv_treeLineColor">?attr/colorOutlineVariant</item>
-    <item name="tv_searchHighlightColor">?attr/colorTertiaryContainer</item>
-    <item name="tv_gitModifiedColor">?attr/colorTertiary</item>
-    <item name="tv_gitAddedColor">?attr/colorPrimary</item>
-    <item name="tv_gitDeletedColor">?attr/colorError</item>
-    <item name="tv_errorColor">?attr/colorError</item>
+        <item name="tv_textColor">?attr/colorOnSurface</item>
+        <item name="tv_selectedBackground">?attr/colorSecondaryContainer</item>
+        <item name="tv_hoveredBackground">?attr/colorSurfaceContainerHigh</item>
+        <item name="tv_treeLineColor">?attr/colorOutlineVariant</item>
+        <item name="tv_searchHighlightColor">?attr/colorTertiaryContainer</item>
+        <item name="tv_gitModifiedColor">?attr/colorTertiary</item>
+        <item name="tv_gitAddedColor">?attr/colorPrimary</item>
+        <item name="tv_gitDeletedColor">?attr/colorError</item>
+        <item name="tv_errorColor">?attr/colorError</item>
+        <item name="android:windowBackground">?attr/colorSurface</item>
+        <item name="panelBackgrounds">?attr/colorSurface</item>
+        <item name="panelTextColor">?attr/colorPrimary</item>
+        <item name="panelColorFilter">?attr/colorPrimary</item>
+        <item name="panelDividerColor">?attr/colorOnSurface</item>
 
-    <item name="android:windowBackground">?attr/colorSurface</item>
-
-  </style>
+    </style>
 
 </resources>

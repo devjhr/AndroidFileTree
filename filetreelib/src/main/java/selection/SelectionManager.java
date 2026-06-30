@@ -8,6 +8,7 @@ public final class SelectionManager {
   public static final int MODE_SINGLE = 0;
   public static final int MODE_MULTI = 1;
   public static final int MODE_RANGE = 2;
+  
 
   public interface SelectionListener {
     void onSelectionChanged(@NonNull Set<String> selectedIds);

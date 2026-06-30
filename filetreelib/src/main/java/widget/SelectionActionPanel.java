@@ -1,6 +1,7 @@
 package ir.hanzodev1375.filetreelib.widget;
 
 import android.content.Context;
+import android.graphics.PorterDuff;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,6 +18,7 @@ import ir.hanzodev1375.filetreelib.clipboard.ClipboardManager;
 import ir.hanzodev1375.filetreelib.core.TreeController;
 import ir.hanzodev1375.filetreelib.core.TreeNode;
 
+import ir.hanzodev1375.filetreelib.theme.ThemeManager;
 import java.util.List;
 
 public final class SelectionActionPanel extends LinearLayout {
@@ -46,10 +48,12 @@ public final class SelectionActionPanel extends LinearLayout {
   private ImageView btnSelectAll;
   private ImageView btnDelete;
   private ImageView btnMore;
+  private View divview;
 
   @Nullable private TreeController controller;
   @Nullable private ClipboardManager clipboard;
   @Nullable private ActionListener actionListener;
+  @Nullable private ThemeManager theme;
   private boolean attached = false;
 
   public SelectionActionPanel(@NonNull Context context) {
@@ -71,7 +75,7 @@ public final class SelectionActionPanel extends LinearLayout {
   private void init(@NonNull Context context) {
     LayoutInflater.from(context).inflate(R.layout.selection_action_panel, this, true);
     setOrientation(VERTICAL);
-
+    theme = new ThemeManager(context);
     tvCount = findViewById(R.id.txt_selected_count);
     btnClose = findViewById(R.id.btn_close);
     btnCopy = findViewById(R.id.btn_copy);
@@ -81,8 +85,23 @@ public final class SelectionActionPanel extends LinearLayout {
     btnSelectAll = findViewById(R.id.btn_selectall);
     btnDelete = findViewById(R.id.btn_delete);
     btnMore = findViewById(R.id.selectionmore);
-
+    divview = findViewById(R.id.divview);
+    applyColorFilter(theme);
     wireClicks();
+  }
+
+  void applyColorFilter(ThemeManager theme) {
+    setBackgroundColor(theme.getPanelBackgroundColor());
+    divview.setBackgroundColor(theme.getPanelDividerColors());
+    btnClose.setColorFilter(theme.getPanelColorFilterColor(), PorterDuff.Mode.SRC_IN);
+    btnCopy.setColorFilter(theme.getPanelColorFilterColor(), PorterDuff.Mode.SRC_IN);
+    btnCut.setColorFilter(theme.getPanelColorFilterColor(), PorterDuff.Mode.SRC_IN);
+    btnPaste.setColorFilter(theme.getPanelColorFilterColor(), PorterDuff.Mode.SRC_IN);
+    btnRename.setColorFilter(theme.getPanelColorFilterColor(), PorterDuff.Mode.SRC_IN);
+    btnSelectAll.setColorFilter(theme.getPanelColorFilterColor(), PorterDuff.Mode.SRC_IN);
+    btnDelete.setColorFilter(theme.getPanelColorFilterColor(), PorterDuff.Mode.SRC_IN);
+    btnMore.setColorFilter(theme.getPanelColorFilterColor(), PorterDuff.Mode.SRC_IN);
+    tvCount.setTextColor(theme.getPanelTextColor());
   }
 
   @MainThread

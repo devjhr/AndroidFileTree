@@ -10,15 +10,19 @@ import ir.hanzodev1375.filetreelib.R;
 /** Resolves theme attributes for the TreeView. */
 public final class ThemeManager {
 
-  @ColorInt private final int textColor;
-  @ColorInt private final int selectedBg;
-  @ColorInt private final int hoveredBg;
-  @ColorInt private final int treeLineColor;
-  @ColorInt private final int searchHighlightColor;
-  @ColorInt private final int gitModifiedColor;
-  @ColorInt private final int gitAddedColor;
-  @ColorInt private final int gitDeletedColor;
-  @ColorInt private final int errorColor;
+  @ColorInt private int textColor;
+  @ColorInt private int selectedBg;
+  @ColorInt private int hoveredBg;
+  @ColorInt private int treeLineColor;
+  @ColorInt private int searchHighlightColor;
+  @ColorInt private int gitModifiedColor;
+  @ColorInt private int gitAddedColor;
+  @ColorInt private int gitDeletedColor;
+  @ColorInt private int errorColor;
+  @ColorInt private int panelBackgroundColor;
+  @ColorInt private int panelColorFilterColor;
+  @ColorInt private int panelTextColor;
+  @ColorInt private int panelDividerColors;
 
   private final int indentWidthPx;
   private final int iconSizePx;
@@ -37,6 +41,10 @@ public final class ThemeManager {
               R.attr.tv_gitAddedColor,
               R.attr.tv_gitDeletedColor,
               R.attr.tv_errorColor,
+              R.attr.panelBackgrounds,
+              R.attr.panelColorFilter,
+              R.attr.panelTextColor,
+              R.attr.panelDividerColor
             });
 
     textColor = a.getColor(0, Color.parseColor("#CCCCCC"));
@@ -48,6 +56,10 @@ public final class ThemeManager {
     gitAddedColor = a.getColor(6, Color.parseColor("#81B88B"));
     gitDeletedColor = a.getColor(7, Color.parseColor("#C74E39"));
     errorColor = a.getColor(8, Color.parseColor("#F44747"));
+    panelBackgroundColor = a.getColor(9, Color.parseColor("#fd000000"));
+    panelColorFilterColor = a.getColor(10, Color.parseColor("#338100"));
+    panelTextColor = a.getColor(11, Color.parseColor("#ff8018"));
+    panelDividerColors = a.getColor(12,Color.GRAY);
     a.recycle();
 
     float density = context.getResources().getDisplayMetrics().density;
@@ -111,5 +123,73 @@ public final class ThemeManager {
 
   public float getTreeLineWidthPx() {
     return treeLineWidthPx;
+  }
+
+  public void setTextColor(int textColor) {
+    this.textColor = textColor;
+  }
+
+  public void setSelectedBg(int selectedBg) {
+    this.selectedBg = selectedBg;
+  }
+
+  public void setHoveredBg(int hoveredBg) {
+    this.hoveredBg = hoveredBg;
+  }
+
+  public void setTreeLineColor(int treeLineColor) {
+    this.treeLineColor = treeLineColor;
+  }
+
+  public void setSearchHighlightColor(int searchHighlightColor) {
+    this.searchHighlightColor = searchHighlightColor;
+  }
+
+  public void setGitModifiedColor(int gitModifiedColor) {
+    this.gitModifiedColor = gitModifiedColor;
+  }
+
+  public void setGitAddedColor(int gitAddedColor) {
+    this.gitAddedColor = gitAddedColor;
+  }
+
+  public void setGitDeletedColor(int gitDeletedColor) {
+    this.gitDeletedColor = gitDeletedColor;
+  }
+
+  public void setErrorColor(int errorColor) {
+    this.errorColor = errorColor;
+  }
+
+  public int getPanelBackgroundColor() {
+    return this.panelBackgroundColor;
+  }
+
+  public void setPanelBackgroundColor(int panelBackgroundColor) {
+    this.panelBackgroundColor = panelBackgroundColor;
+  }
+
+  public int getPanelColorFilterColor() {
+    return this.panelColorFilterColor;
+  }
+
+  public void setPanelColorFilterColor(int panelColorFilterColor) {
+    this.panelColorFilterColor = panelColorFilterColor;
+  }
+
+  public int getPanelTextColor() {
+    return this.panelTextColor;
+  }
+
+  public void setPanelTextColor(int panelTextColor) {
+    this.panelTextColor = panelTextColor;
+  }
+
+  public int getPanelDividerColors() {
+    return this.panelDividerColors;
+  }
+
+  public void setPanelDividerColors(int panelDividerColors) {
+    this.panelDividerColors = panelDividerColors;
   }
 }

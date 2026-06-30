@@ -1,9 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  SelectionActionPanel layout
-  Root = <merge> because the Java class itself is a LinearLayout (orientation=vertical).
-  Place it in:  filetreelib/src/main/res/layout/selection_action_panel.xml
--->
+
 <merge xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- ── Row 1 : count label + close button ── -->
@@ -15,7 +11,8 @@
         android:paddingStart="12dp"
         android:paddingEnd="4dp"
         android:paddingTop="6dp"
-        android:paddingBottom="2dp">
+        android:paddingBottom="2dp"
+        >
 
         <TextView
             android:id="@+id/txt_selected_count"
@@ -25,7 +22,8 @@
             android:text="0 items selected"
             android:textColor="?colorOnSurface"
             android:textSize="13sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            />
 
         <ImageView
             android:id="@+id/btn_close"
@@ -36,7 +34,8 @@
             android:padding="10dp"
             android:scaleType="centerInside"
             android:src="@drawable/ic_close"
-            android:tint="?colorOnSurface" />
+            android:tint="?colorOnSurface"
+            />
 
     </LinearLayout>
 
@@ -45,7 +44,9 @@
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:alpha="0.10"
-        android:background="?colorOnSurface" />
+        android:id="@+id/divview"
+        android:background="?colorOnSurface"
+        />
 
     <!-- ── Row 2 : action buttons ── -->
     <LinearLayout
@@ -56,7 +57,8 @@
         android:paddingStart="4dp"
         android:paddingEnd="4dp"
         android:paddingTop="2dp"
-        android:paddingBottom="4dp">
+        android:paddingBottom="4dp"
+        >
 
         <!-- Copy -->
         <ImageView
@@ -69,7 +71,8 @@
             android:padding="10dp"
             android:scaleType="centerInside"
             android:src="@drawable/ic_copy"
-            android:tint="?colorOnSurface" />
+            android:tint="?colorOnSurface"
+            />
 
         <!-- Cut -->
         <ImageView
@@ -82,7 +85,8 @@
             android:padding="10dp"
             android:scaleType="centerInside"
             android:src="@drawable/ic_cut"
-            android:tint="?colorOnSurface" />
+            android:tint="?colorOnSurface"
+            />
 
         <!-- Paste (dimmed when clipboard is empty) -->
         <ImageView
@@ -95,7 +99,8 @@
             android:padding="10dp"
             android:scaleType="centerInside"
             android:src="@drawable/ic_paste"
-            android:tint="?colorOnSurface" />
+            android:tint="?colorOnSurface"
+            />
 
         <!-- Rename — visible only when exactly 1 node selected -->
         <ImageView
@@ -109,7 +114,8 @@
             android:scaleType="centerInside"
             android:src="@drawable/ic_rename"
             android:tint="?colorOnSurface"
-            android:visibility="gone" />
+            android:visibility="gone"
+            />
 
         <!-- Select All -->
         <ImageView
@@ -122,7 +128,8 @@
             android:padding="10dp"
             android:scaleType="centerInside"
             android:src="@drawable/outline_select_all"
-            android:tint="?colorOnSurface" />
+            android:tint="?colorOnSurface"
+            />
 
         <!-- Delete -->
         <ImageView
@@ -135,7 +142,8 @@
             android:padding="10dp"
             android:scaleType="centerInside"
             android:src="@drawable/ic_delete"
-            android:tint="?colorOnSurface" />
+            android:tint="?colorOnSurface"
+            />
 
         <!-- More ⋮ -->
         <ImageView
@@ -148,7 +156,8 @@
             android:padding="10dp"
             android:scaleType="centerInside"
             android:src="@drawable/more_vert"
-            android:tint="?colorOnSurface" />
+            android:tint="?colorOnSurface"
+            />
 
     </LinearLayout>
 

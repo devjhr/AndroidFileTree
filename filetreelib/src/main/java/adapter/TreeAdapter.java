@@ -54,13 +54,9 @@ public final class TreeAdapter extends RecyclerView.Adapter<TreeViewHolder> {
   @NonNull private IconProvider iconProvider;
   @Nullable private ClipboardManager clipboardManager;
   @Nullable private TreeViewHolder holder;
-
   @NonNull private List<TreeNode> currentList = new ArrayList<>();
   @NonNull private final Map<String, SearchResult> searchResults = new HashMap<>();
-
-  // آخرین وضعیت selection برای diff دقیق
   @NonNull private final Map<String, Boolean> lastSelectionState = new HashMap<>();
-
   @Nullable private OnNodeClickListener clickListener;
   @Nullable private OnNodeLongClickListener longClickListener;
   @Nullable private OnSelectionModeChangeListener selectionModeListener;
@@ -116,7 +112,6 @@ public final class TreeAdapter extends RecyclerView.Adapter<TreeViewHolder> {
         .getSelectionManager()
         .addListener(
             ids -> {
-              // فقط آیتم‌هایی که وضعیت‌شون عوض شده رو notify کن
               notifySelectionChanged(ids);
 
               if (selectionModeListener != null) {
@@ -130,7 +125,6 @@ public final class TreeAdapter extends RecyclerView.Adapter<TreeViewHolder> {
             });
   }
 
-  /** فقط آیتم‌هایی که selected/deselected شدن رو notify می‌کنه — O(changed) نه O(n) */
   private void notifySelectionChanged(@NonNull Set<String> newIds) {
     for (int i = 0; i < currentList.size(); i++) {
       TreeNode node = currentList.get(i);
@@ -141,7 +135,7 @@ public final class TreeAdapter extends RecyclerView.Adapter<TreeViewHolder> {
         notifyItemChanged(i, Boolean.TRUE);
       }
     }
-    // آپدیت snapshot
+
     lastSelectionState.clear();
     for (String id : newIds) {
       lastSelectionState.put(id, Boolean.TRUE);
@@ -276,6 +270,15 @@ public final class TreeAdapter extends RecyclerView.Adapter<TreeViewHolder> {
   public TreeNode getNode(int position) {
     if (position < 0 || position >= currentList.size()) return null;
     return currentList.get(position);
+  }
+
+  public void refreshNode(@NonNull String nodeId) {
+    for (int i = 0; i < currentList.size(); i++) {
+      if (currentList.get(i).getId().equals(nodeId)) {
+        notifyItemChanged(i);
+        return;
+      }
+    }
   }
 
   public void setIconProvider(@NonNull IconProvider provider) {
