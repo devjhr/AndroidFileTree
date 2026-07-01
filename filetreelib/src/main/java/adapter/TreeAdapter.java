@@ -91,9 +91,22 @@ public final class TreeAdapter extends RecyclerView.Adapter<TreeViewHolder> {
               public void onNodesExpanded(
                   @NonNull TreeNode parent, @NonNull List<TreeNode> inserted, int insertPos) {
                 int parentPos = currentList.indexOf(parent);
-                submitNewList(visibleList.snapshot());
-                if (parentPos >= 0) {
-                  mainHandler.post(() -> notifyItemChanged(parentPos, Boolean.TRUE));
+                if (parentPos >= 0 && insertPos == parentPos + 1 && !inserted.isEmpty()) {
+                  // Fast path: we already know exactly where and what to insert, so
+                  // mutate the adapter's list directly and notify RecyclerView right
+                  // away — this skips the background DiffUtil pass (+ thread hop),
+                  // which is what made expanding large folders (20-30+ items) visibly
+                  // lag behind the actual (instant) load.
+                  currentList.addAll(insertPos, inserted);
+                  notifyItemRangeInserted(insertPos, inserted.size());
+                  notifyItemChanged(parentPos, Boolean.TRUE);
+                } else {
+                  // Fallback for edge cases (currentList out of sync with visibleList,
+                  // e.g. a diff from a previous op is still in flight): full re-diff.
+                  submitNewList(visibleList.snapshot());
+                  if (parentPos >= 0) {
+                    mainHandler.post(() -> notifyItemChanged(parentPos, Boolean.TRUE));
+                  }
                 }
               }
 
@@ -101,9 +114,32 @@ public final class TreeAdapter extends RecyclerView.Adapter<TreeViewHolder> {
               public void onNodesCollapsed(
                   @NonNull TreeNode parent, @NonNull List<TreeNode> removed, int removePos) {
                 int parentPos = currentList.indexOf(parent);
-                submitNewList(visibleList.snapshot());
-                if (parentPos >= 0) {
-                  mainHandler.post(() -> notifyItemChanged(parentPos, Boolean.TRUE));
+                boolean canFastPath =
+                    parentPos >= 0
+                        && removePos == parentPos + 1
+                        && !removed.isEmpty()
+                        && removePos + removed.size() <= currentList.size();
+                if (canFastPath) {
+                  for (int i = 0; i < removed.size(); i++) {
+                    currentList.remove(removePos);
+                  }
+                  notifyItemRangeRemoved(removePos, removed.size());
+                  notifyItemChanged(parentPos, Boolean.TRUE);
+                } else {
+                  submitNewList(visibleList.snapshot());
+                  if (parentPos >= 0) {
+                    mainHandler.post(() -> notifyItemChanged(parentPos, Boolean.TRUE));
+                  }
+                }
+              }
+
+              @Override
+              public void onLazyLoadStateChanged(@NonNull TreeNode node) {
+                // No rows are inserted/removed here — just flip this single row's
+                // arrow into/out of its inline loading spinner via a payload bind.
+                int pos = currentList.indexOf(node);
+                if (pos >= 0) {
+                  mainHandler.post(() -> notifyItemChanged(pos, Boolean.TRUE));
                 }
               }
             });
