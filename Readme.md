@@ -1,3 +1,5 @@
+[![](https://jitpack.io/v/HanzoDev1375/AndroidFileTree.svg)](https://jitpack.io/#HanzoDev1375/AndroidFileTree)
+
 # AndroidFileTree
 
 A production-ready Android TreeView library for building modern file explorers similar to Android Studio, Visual Studio Code, and desktop file managers.

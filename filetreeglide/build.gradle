@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace 'ir.hanzodev1375.filetreelibglide'
+    namespace 'ir.hanzodev1375.filetreelib.filetreelibglide'
     compileSdk {
         version = release(36)
     }

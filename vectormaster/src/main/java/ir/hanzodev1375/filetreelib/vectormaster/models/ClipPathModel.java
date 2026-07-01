@@ -1,4 +1,4 @@
-package com.itsvks.layouteditor.vectormaster.models;
+package ir.hanzodev1375.filetreelib.vectormaster.models;
 
 import android.graphics.Matrix;
 import android.graphics.Paint;
@@ -7,7 +7,7 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
 
-import com.itsvks.layouteditor.vectormaster.utilities.parser.PathParser;
+import ir.hanzodev1375.filetreelib.vectormaster.utilities.parser.PathParser;
 
 public class ClipPathModel {
     private String name;
@@ -30,7 +30,7 @@ public class ClipPathModel {
         if (pathData != null) {
             if (useLegacyParser) {
                 originalPath =
-                    com.itsvks.layouteditor.vectormaster.utilities.legacyparser.PathParser
+                    ir.hanzodev1375.filetreelib.vectormaster.utilities.legacyparser.PathParser
                         .createPathFromPathData(pathData);
             } else {
                 originalPath = PathParser.doPath(pathData);

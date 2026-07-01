@@ -1,4 +1,4 @@
-package com.itsvks.layouteditor.vectormaster.enums;
+package ir.hanzodev1375.filetreelib.vectormaster.enums;
 
 public enum TintMode {
     ADD,

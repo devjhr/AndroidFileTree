@@ -6,7 +6,7 @@ import android.graphics.drawable.Drawable;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.itsvks.layouteditor.vectormaster.VectorMasterDrawable;
+import ir.hanzodev1375.filetreelib.vectormaster.VectorMasterDrawable;
 
 import java.io.File;
 

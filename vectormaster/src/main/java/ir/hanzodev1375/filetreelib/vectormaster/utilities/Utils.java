@@ -1,11 +1,11 @@
-package com.itsvks.layouteditor.vectormaster.utilities;
+package ir.hanzodev1375.filetreelib.vectormaster.utilities;
 
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 
-import com.itsvks.layouteditor.vectormaster.DefaultValues;
+import ir.hanzodev1375.filetreelib.vectormaster.DefaultValues;
 
 import java.lang.reflect.Field;
 

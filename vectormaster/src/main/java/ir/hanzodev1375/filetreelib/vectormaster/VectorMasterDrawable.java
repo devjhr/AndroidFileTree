@@ -1,4 +1,4 @@
-package com.itsvks.layouteditor.vectormaster;
+package ir.hanzodev1375.filetreelib.vectormaster;
 
 import android.content.Context;
 import android.content.res.Resources;
@@ -11,11 +11,11 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
 
-import com.itsvks.layouteditor.vectormaster.models.ClipPathModel;
-import com.itsvks.layouteditor.vectormaster.models.GroupModel;
-import com.itsvks.layouteditor.vectormaster.models.PathModel;
-import com.itsvks.layouteditor.vectormaster.models.VectorModel;
-import com.itsvks.layouteditor.vectormaster.utilities.Utils;
+import ir.hanzodev1375.filetreelib.vectormaster.models.ClipPathModel;
+import ir.hanzodev1375.filetreelib.vectormaster.models.GroupModel;
+import ir.hanzodev1375.filetreelib.vectormaster.models.PathModel;
+import ir.hanzodev1375.filetreelib.vectormaster.models.VectorModel;
+import ir.hanzodev1375.filetreelib.vectormaster.utilities.Utils;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
