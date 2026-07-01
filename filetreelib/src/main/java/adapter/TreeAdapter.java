@@ -230,7 +230,7 @@ public final class TreeAdapter extends RecyclerView.Adapter<TreeViewHolder> {
     if (!payloads.isEmpty()) {
       TreeNode node = currentList.get(position);
       holder.updateSelection(node.isSelected(), theme.getSelectedBg(), selectionMode);
-      holder.updateArrow(node);
+      holder.updateArrow(node, selectionMode);
       holder.updateIcon(context, node, iconProvider);
     } else {
       onBindViewHolder(holder, position);

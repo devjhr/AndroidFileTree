@@ -17,24 +17,27 @@
          android:layout_width="0dp"
          android:id="@+id/tv_indent" />
 
-    <CheckBox
+    <ViewFlipper
          android:layout_height="20dp"
          android:layout_width="20dp"
-         android:visibility="gone"
-         android:clickable="false"
-         android:scaleX="0.8"
-         android:scaleY="0.8"
-         android:textSize="12sp"
-         android:id="@+id/tv_checkbox" />
-
-    <ViewFlipper
-         android:layout_height="16dp"
-         android:layout_width="16dp"
+         android:layout_marginStart="17dp"
          android:id="@+id/tv_arrow_switcher">
-
+    
+        <CheckBox
+             android:layout_height="20dp"
+             android:layout_width="20dp"
+             android:layout_gravity="center"
+             android:visibility="gone"
+             android:clickable="false"
+             android:scaleX="0.8"
+             android:scaleY="0.8"
+             android:textSize="12sp"
+             android:id="@+id/tv_checkbox" />
+    
         <ImageView
              android:layout_height="16dp"
              android:layout_width="16dp"
+             android:layout_gravity="center"
              android:src="@drawable/ic_arrow_right"
              android:scaleType="centerInside"
              android:contentDescription="@string/cd_expand_arrow"
@@ -43,6 +46,7 @@
         <ProgressBar
              android:layout_height="14dp"
              android:layout_width="14dp"
+             android:layout_gravity="center"
              android:indeterminate="true"
              android:id="@+id/tv_arrow_loading" />
 
@@ -55,7 +59,7 @@
          android:scaleType="centerInside"
          android:layout_marginEnd="4dp"
          android:contentDescription="@string/cd_node_icon"
-         android:layout_marginStart="4dp"
+         android:layout_marginStart="0dp"
          android:id="@+id/tv_icon" />
 
     <TextView
