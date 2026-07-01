@@ -69,6 +69,15 @@ public final class ExpandManager {
                 @NonNull TreeNode parentNode,
                 @NonNull List<TreeNode> removedNodes,
                 int removePosition);
+
+        /**
+         * Called when a node's lazy-loading state changes (started, finished, or failed),
+         * without any rows being inserted or removed. The adapter should refresh just this
+         * single row so it can flip its arrow icon into/out of an inline spinner.
+         *
+         * @param node the node whose loading state changed
+         */
+        default void onLazyLoadStateChanged(@NonNull TreeNode node) {}
     }
 
     // -------------------------------------------------------------------------
@@ -85,7 +94,8 @@ public final class ExpandManager {
 
     /**
      * IDs of nodes whose children are being lazily loaded.  These nodes are
-     * considered "expanded with pending load" and show a loading placeholder.
+     * considered "expanded with pending load" and show an inline loading
+     * spinner in place of their arrow icon (see {@link ExpandListener#onLazyLoadStateChanged}).
      */
     @NonNull
     private final Set<String> lazyLoadingIds = new HashSet<>();
@@ -129,8 +139,8 @@ public final class ExpandManager {
      * <p>If the node is already expanded or has no children (and is not marked
      * as having unloaded children), this is a no-op.
      *
-     * <p>If {@link TreeNode#isLazyLoadPending()} is {@code true}, a loading
-     * placeholder row is inserted instead of real children; the caller is
+     * <p>If {@link TreeNode#isLazyLoadPending()} is {@code true}, no row is inserted;
+     * instead the node's own row shows an inline loading spinner. The caller is
      * responsible for triggering the actual load and then calling
      * {@link #onLazyLoadCompleted(TreeNode, List)}.
      *
@@ -154,21 +164,18 @@ public final class ExpandManager {
         }
         int insertPosition = nodePosition + 1;
 
-        List<TreeNode> toInsert;
-
         if (node.isLazyLoadPending()) {
-            // Insert a single TYPE_LOADING placeholder.
-            TreeNode placeholder = new TreeNode.Builder("Loading…")
-                    .setId("__loading_" + node.getId() + "__")
-                    .setType(TreeNode.TYPE_LOADING)
-                    .build();
-            toInsert = Collections.singletonList(placeholder);
+            // No placeholder row is inserted anymore. The row for `node` itself
+            // shows an inline spinner (its arrow icon flips to a ProgressBar via
+            // a ViewFlipper) while children are being fetched in the background.
+            // The caller triggers the actual load and then calls
+            // onLazyLoadCompleted(node, ...) once it's done.
             lazyLoadingIds.add(node.getId());
-        } else {
-            // Collect the visible descendants of the newly expanded children.
-            // A child contributes itself + any expanded sub-children.
-            toInsert = collectExpandedSubtree(node);
+            notifyLazyLoadStateChanged(node);
+            return;
         }
+
+        List<TreeNode> toInsert = collectExpandedSubtree(node);
 
         visibleList.insertAll(insertPosition, toInsert);
         notifyExpanded(node, toInsert, insertPosition);
@@ -305,8 +312,8 @@ public final class ExpandManager {
     // -------------------------------------------------------------------------
 
     /**
-     * Called by the data provider after a lazy load completes.  Removes the
-     * loading placeholder row and inserts the real children.
+     * Called by the data provider after a lazy load completes.  Clears the loading
+     * state (flips the row's spinner back to its arrow) and inserts the real children.
      *
      * @param parent      the node whose children have now been loaded
      * @param newChildren the freshly loaded children (already attached to {@code parent})
@@ -318,16 +325,10 @@ public final class ExpandManager {
         lazyLoadingIds.remove(parent.getId());
         parent.setLazyLoadPending(false);
 
-        // Remove the loading placeholder.
-        String placeholderId = "__loading_" + parent.getId() + "__";
-        int placeholderPos   = visibleList.indexOfId(placeholderId);
-        if (placeholderPos >= 0) {
-            visibleList.removeAt(placeholderPos);
-        }
-
         if (newChildren.isEmpty()) {
             // No children: mark as leaf so the arrow disappears.
             parent.setHasChildren(false);
+            notifyLazyLoadStateChanged(parent);
             notifyCollapsed(parent, Collections.emptyList(), -1);
             return;
         }
@@ -338,11 +339,12 @@ public final class ExpandManager {
         int insertPos = (parentPos >= 0) ? parentPos + 1 : visibleList.size();
 
         visibleList.insertAll(insertPos, toInsert);
+        notifyLazyLoadStateChanged(parent);
         notifyExpanded(parent, toInsert, insertPos);
     }
 
     /**
-     * Called when a lazy load fails.  Removes the loading placeholder and
+     * Called when a lazy load fails.  Clears the loading state and
      * collapses the node to prevent a broken open state.
      *
      * @param parent the node whose load failed
@@ -352,11 +354,7 @@ public final class ExpandManager {
         lazyLoadingIds.remove(parent.getId());
         parent.setLazyLoadPending(false);
 
-        String placeholderId = "__loading_" + parent.getId() + "__";
-        int placeholderPos   = visibleList.indexOfId(placeholderId);
-        if (placeholderPos >= 0) {
-            visibleList.removeAt(placeholderPos);
-        }
+        notifyLazyLoadStateChanged(parent);
 
         parent.setExpanded(false);
         // Notify collapsed with empty list — adapter will animate the arrow.
@@ -483,6 +481,12 @@ public final class ExpandManager {
             int removePosition) {
         for (ExpandListener listener : listeners) {
             listener.onNodesCollapsed(parent, removedNodes, removePosition);
+        }
+    }
+
+    private void notifyLazyLoadStateChanged(@NonNull TreeNode node) {
+        for (ExpandListener listener : listeners) {
+            listener.onLazyLoadStateChanged(node);
         }
     }
 }

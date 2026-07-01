@@ -6,6 +6,7 @@ import android.view.View;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.ViewFlipper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
@@ -23,6 +24,7 @@ import ir.hanzodev1375.filetreelib.utils.TreeUtils;
 public final class TreeViewHolder extends RecyclerView.ViewHolder {
 
   final View itemRoot;
+  final ViewFlipper arrowSwitcher;
   final ImageView ivArrow;
   final ImageView ivIcon;
   final TextView tvName;
@@ -36,6 +38,7 @@ public final class TreeViewHolder extends RecyclerView.ViewHolder {
   public TreeViewHolder(@NonNull View itemView) {
     super(itemView);
     itemRoot = itemView;
+    arrowSwitcher = itemView.findViewById(R.id.tv_arrow_switcher);
     ivArrow = itemView.findViewById(R.id.tv_arrow);
     ivIcon = itemView.findViewById(R.id.tv_icon);
     tvName = itemView.findViewById(R.id.tv_name);
@@ -68,10 +71,11 @@ public final class TreeViewHolder extends RecyclerView.ViewHolder {
     } else {
       checkbox.setVisibility(View.GONE);
     }
-    if (node.isFile() || node.isLoadingPlaceholder()) {
-      ivArrow.setVisibility(View.INVISIBLE);
+    if (node.isFile()) {
+      arrowSwitcher.setVisibility(View.INVISIBLE);
     } else {
-      ivArrow.setVisibility(node.hasChildren() ? View.VISIBLE : View.INVISIBLE);
+      arrowSwitcher.setVisibility(node.hasChildren() ? View.VISIBLE : View.INVISIBLE);
+      applyLoadingState(node);
       ivArrow.setRotation(node.isExpanded() ? 90f : 0f);
       ivArrow.setOnClickListener(selectionMode ? null : arrowClickListener);
     }
@@ -160,12 +164,26 @@ public final class TreeViewHolder extends RecyclerView.ViewHolder {
   }
 
   public void updateArrow(@NonNull TreeNode node) {
-    if (node.isFile() || node.isLoadingPlaceholder()) {
-      ivArrow.setVisibility(View.INVISIBLE);
+    if (node.isFile()) {
+      arrowSwitcher.setVisibility(View.INVISIBLE);
       return;
     }
-    ivArrow.setVisibility(node.hasChildren() ? View.VISIBLE : View.INVISIBLE);
+    arrowSwitcher.setVisibility(node.hasChildren() ? View.VISIBLE : View.INVISIBLE);
+    applyLoadingState(node);
     ivArrow.setRotation(node.isExpanded() ? 90f : 0f);
+  }
+
+  /**
+   * Flips {@link #arrowSwitcher} between the arrow icon and the inline loading spinner
+   * depending on {@link TreeNode#isLazyLoadPending()}. Also disables the arrow's click
+   * target while loading so the user can't re-trigger the load mid-flight.
+   */
+  private void applyLoadingState(@NonNull TreeNode node) {
+    int wantedChild = node.isLazyLoadPending() ? 1 : 0;
+    if (arrowSwitcher.getDisplayedChild() != wantedChild) {
+      arrowSwitcher.setDisplayedChild(wantedChild);
+    }
+    ivArrow.setClickable(!node.isLazyLoadPending());
   }
 
   public void updateIcon(
