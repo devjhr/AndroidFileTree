@@ -21,6 +21,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import ir.hanzodev1375.filetreelib.zoom.ZoomManager;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -84,7 +85,7 @@ public class TwoDScrollView extends FrameLayout {
   private int mMinimumVelocity;
   private int mMaximumVelocity;
 
-  /** Pinch-to-zoom state (bounds, current level, enabled/disabled) — see {@link ZoomManager}. */
+/** Pinch-to-zoom state (bounds, current level, enabled/disabled) — see {@link ZoomManager}. */
   private final ZoomManager zoomManager = new ZoomManager();
 
   private ScaleGestureDetector scaleGestureDetector;
@@ -92,6 +93,29 @@ public class TwoDScrollView extends FrameLayout {
   /** True while a 2-finger pinch gesture is actively in progress. */
   private boolean mIsScaling = false;
 
+  private final List<OnScrollListener> scrollListeners = new ArrayList<>();
+
+  /** Callback invoked whenever this view's scroll position changes. */
+  public interface OnScrollListener {
+    void onScrollChanged(int left, int top, int oldLeft, int oldTop);
+  }
+
+  public void addOnScrollListener(OnScrollListener listener) {
+    scrollListeners.add(listener);
+  }
+
+  public boolean removeOnScrollListener(OnScrollListener listener) {
+    return scrollListeners.remove(listener);
+  }
+
+  @Override
+  protected void onScrollChanged(int l, int t, int oldl, int oldt) {
+    super.onScrollChanged(l, t, oldl, oldt);
+    for (OnScrollListener listener : scrollListeners) {
+      listener.onScrollChanged(l, t, oldl, oldt);
+    }
+  }
+  
   public TwoDScrollView(Context context) {
     super(context);
     initTwoDScrollView();
@@ -328,6 +352,13 @@ public class TwoDScrollView extends FrameLayout {
             && getChildCount() > 0) {
           fling(-initialXVelocity, -initialYVelocity);
         }
+        if (mVelocityTracker != null) {
+          mVelocityTracker.recycle();
+          mVelocityTracker = null;
+        }
+        break;
+      case MotionEvent.ACTION_CANCEL:
+        mIsBeingDragged = false;
         if (mVelocityTracker != null) {
           mVelocityTracker.recycle();
           mVelocityTracker = null;
