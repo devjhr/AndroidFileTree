@@ -39,10 +39,11 @@ public class MainActivity extends AppCompatActivity {
     var dialog = new BottomSheetDialog(this);
     var view = new FileTreeView(this);
     var theme = view.getTheme();
-    theme.setTextColor(Color.CYAN);
-    theme.setTreeLineColor(Color.parseColor("#fff888"));
-    theme.setSelectedBg(Color.parseColor("#ff4107"));
-    
+   // theme.setTextColor(Color.CYAN);
+   // theme.setTreeLineColor(Color.parseColor("#fff888"));
+  //  theme.setSelectedBg(Color.parseColor("#ff4107"));
+    view.setZoomMod(true);
+    view.setZoomScale(50,300);
     view.setNodePath("/storage/emulated/0/");
     view.loadTree();
     view.setIconProvider(new FileIconGlide());

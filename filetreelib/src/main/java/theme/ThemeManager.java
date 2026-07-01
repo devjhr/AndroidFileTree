@@ -5,6 +5,7 @@ import android.content.res.TypedArray;
 import android.graphics.Color;
 import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
+import com.google.android.material.color.MaterialColors;
 import ir.hanzodev1375.filetreelib.R;
 
 /** Resolves theme attributes for the TreeView. */
@@ -23,12 +24,13 @@ public final class ThemeManager {
   @ColorInt private int panelColorFilterColor;
   @ColorInt private int panelTextColor;
   @ColorInt private int panelDividerColors;
-
+  @NonNull private Context context;
   private final int indentWidthPx;
   private final int iconSizePx;
   private final float treeLineWidthPx;
 
   public ThemeManager(@NonNull Context context) {
+    this.context = context;
     TypedArray a =
         context.obtainStyledAttributes(
             new int[] {
@@ -46,26 +48,30 @@ public final class ThemeManager {
               R.attr.panelTextColor,
               R.attr.panelDividerColor
             });
-
-    textColor = a.getColor(0, Color.parseColor("#CCCCCC"));
-    selectedBg = a.getColor(1, Color.parseColor("#094771"));
-    hoveredBg = a.getColor(2, Color.parseColor("#2A2D2E"));
-    treeLineColor = a.getColor(3, Color.parseColor("#404040"));
-    searchHighlightColor = a.getColor(4, Color.parseColor("#613315"));
-    gitModifiedColor = a.getColor(5, Color.parseColor("#E2C08D"));
-    gitAddedColor = a.getColor(6, Color.parseColor("#81B88B"));
-    gitDeletedColor = a.getColor(7, Color.parseColor("#C74E39"));
-    errorColor = a.getColor(8, Color.parseColor("#F44747"));
-    panelBackgroundColor = a.getColor(9, Color.parseColor("#fd000000"));
-    panelColorFilterColor = a.getColor(10, Color.parseColor("#338100"));
-    panelTextColor = a.getColor(11, Color.parseColor("#ff8018"));
-    panelDividerColors = a.getColor(12,Color.GRAY);
+     
+    textColor = a.getColor(0, get(R.attr.colorOnSurface));
+    selectedBg = a.getColor(1, get(R.attr.colorSecondaryContainer));
+    hoveredBg = a.getColor(2, get(R.attr.colorSurfaceContainerHigh));
+    treeLineColor = a.getColor(3, get(R.attr.colorOutlineVariant));
+    searchHighlightColor = a.getColor(4, get(R.attr.colorTertiaryContainer));
+    gitModifiedColor = a.getColor(5, get(R.attr.colorTertiary));
+    gitAddedColor = a.getColor(6, get(R.attr.colorPrimary));
+    gitDeletedColor = a.getColor(7, get(R.attr.colorError));
+    errorColor = a.getColor(8, get(R.attr.colorError));
+    panelBackgroundColor = a.getColor(9, get(R.attr.colorSurface));
+    panelColorFilterColor = a.getColor(10, get(R.attr.colorPrimary));
+    panelTextColor = a.getColor(11, get(R.attr.colorPrimary));
+    panelDividerColors = a.getColor(12, get(R.attr.colorOnSurface));
     a.recycle();
 
     float density = context.getResources().getDisplayMetrics().density;
     indentWidthPx = (int) (20 * density);
     iconSizePx = (int) (20 * density);
     treeLineWidthPx = 1 * density;
+  }
+
+  int get(int id) {
+    return MaterialColors.getColor(context, id, 0);
   }
 
   @ColorInt

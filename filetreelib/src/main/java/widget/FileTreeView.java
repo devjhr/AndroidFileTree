@@ -40,6 +40,7 @@ import java.util.concurrent.Executors;
 public class FileTreeView extends LinearLayout {
   private String nodePath;
   private TreeView treeView;
+  private TwoDScrollView scrollContainer;
   private SelectionActionPanel selectionPanel;
   private TreeController controller;
   private TreeAdapter adapter;
@@ -74,6 +75,7 @@ public class FileTreeView extends LinearLayout {
       addView(v);
     }
     treeView = v.findViewById(R.id.tree_view);
+    scrollContainer = v.findViewById(R.id.two_d_scroll_view);
     selectionPanel = v.findViewById(R.id.selectionPanel);
     EditText etSearch = v.findViewById(R.id.et_search);
 
@@ -465,8 +467,66 @@ public class FileTreeView extends LinearLayout {
   public ThemeManager getTheme() {
     return this.theme;
   }
+  
+  /**
+   * <p> setCustomTheme
+   */
 
   public void setTheme(ThemeManager theme) {
     this.theme = theme;
+  }
+
+  /**
+   * Enables or disables pinch-to-zoom on the tree, similar to zooming into a photo.
+   *
+   * <p>Disabling it only turns off the pinch gesture, it doesn't change the current zoom level — to
+   * return it to 100% use {@link #resetZoom()}.
+   *
+   * @param zoomMod true to allow the user to pinch-zoom the tree with two fingers
+   */
+  public void setZoomMod(boolean zoomMod) {
+    if (scrollContainer != null) scrollContainer.setZoomMod(zoomMod);
+  }
+
+  /**
+   * @return whether pinch-to-zoom is currently enabled.
+   */
+  public boolean isZoomMod() {
+    return scrollContainer != null && scrollContainer.isZoomMod();
+  }
+
+  /**
+   * Sets the allowed zoom range, as percentages of the original size (100 = original size).
+   *
+   * @param minScale minimum zoom, e.g. 50 for 50%
+   * @param maxScale maximum zoom, e.g. 300 for 300%
+   */
+  public void setZoomScale(int minScale, int maxScale) {
+    if (scrollContainer != null) scrollContainer.setZoomScale(minScale, maxScale);
+  }
+
+  /**
+   * @return {@code [minPercent, maxPercent]} currently allowed for zoom.
+   */
+  @NonNull
+  public int[] getZoomScale() {
+    return scrollContainer != null ? scrollContainer.getZoomScale() : new int[] {100, 100};
+  }
+
+  /**
+   * @return the current zoom level as a percentage (100 = original size).
+   */
+  public int getCurrentZoomScale() {
+    return scrollContainer != null ? scrollContainer.getCurrentZoomScale() : 100;
+  }
+
+  /** Programmatically sets the zoom level (percentage), clamped to the configured range. */
+  public void setCurrentZoomScale(int percent) {
+    if (scrollContainer != null) scrollContainer.setCurrentZoomScale(percent);
+  }
+
+  /** Resets the zoom level back to 100%. */
+  public void resetZoom() {
+    if (scrollContainer != null) scrollContainer.resetZoom();
   }
 }

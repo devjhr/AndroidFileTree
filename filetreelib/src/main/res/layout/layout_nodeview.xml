@@ -27,7 +27,8 @@
     <ir.hanzodev1375.filetreelib.widget.TwoDScrollView
          android:layout_height="0dp"
          android:layout_width="match_parent"
-         android:layout_weight="1">
+         android:layout_weight="1"
+         android:id="@+id/two_d_scroll_view">
 
         <ir.hanzodev1375.filetreelib.widget.TreeView
              android:layout_height="wrap_content"

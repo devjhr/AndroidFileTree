@@ -7,6 +7,7 @@ import android.util.AttributeSet;
 import android.view.FocusFinder;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewConfiguration;
@@ -17,6 +18,8 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.Scroller;
 import android.widget.TextView;
+import androidx.annotation.NonNull;
+import ir.hanzodev1375.filetreelib.zoom.ZoomManager;
 
 import java.util.List;
 
@@ -81,6 +84,14 @@ public class TwoDScrollView extends FrameLayout {
   private int mMinimumVelocity;
   private int mMaximumVelocity;
 
+  /** Pinch-to-zoom state (bounds, current level, enabled/disabled) — see {@link ZoomManager}. */
+  private final ZoomManager zoomManager = new ZoomManager();
+
+  private ScaleGestureDetector scaleGestureDetector;
+
+  /** True while a 2-finger pinch gesture is actively in progress. */
+  private boolean mIsScaling = false;
+
   public TwoDScrollView(Context context) {
     super(context);
     initTwoDScrollView();
@@ -95,6 +106,34 @@ public class TwoDScrollView extends FrameLayout {
     mTouchSlop = configuration.getScaledTouchSlop();
     mMinimumVelocity = configuration.getScaledMinimumFlingVelocity();
     mMaximumVelocity = configuration.getScaledMaximumFlingVelocity();
+
+    zoomManager.setOnZoomChangeListener(this::applyZoomChange);
+    scaleGestureDetector =
+        new ScaleGestureDetector(
+            getContext(),
+            new ScaleGestureDetector.SimpleOnScaleGestureListener() {
+              @Override
+              public boolean onScaleBegin(@NonNull ScaleGestureDetector detector) {
+                if (!zoomManager.isZoomMod()) return false;
+                mIsScaling = true;
+                mIsBeingDragged = false;
+                if (!mScroller.isFinished()) mScroller.abortAnimation();
+                return true;
+              }
+
+              @Override
+              public boolean onScale(@NonNull ScaleGestureDetector detector) {
+                float target = zoomManager.getCurrentZoomFactor() * detector.getScaleFactor();
+                zoomManager.setCurrentZoomFactor(
+                    target, detector.getFocusX(), detector.getFocusY());
+                return true;
+              }
+
+              @Override
+              public void onScaleEnd(@NonNull ScaleGestureDetector detector) {
+                mIsScaling = false;
+              }
+            });
   }
 
   public TwoDScrollView(Context context, AttributeSet attrs) {
@@ -179,6 +218,35 @@ public class TwoDScrollView extends FrameLayout {
   @Override
   public boolean onTouchEvent(MotionEvent ev) {
 
+    if (zoomManager.isZoomMod()) {
+      scaleGestureDetector.onTouchEvent(ev);
+
+      if (mIsScaling || ev.getPointerCount() > 1) {
+        // A pinch is in progress (or just ended this frame) — don't run the single-finger
+        // scroll/fling logic below for this event.
+        switch (ev.getActionMasked()) {
+          case MotionEvent.ACTION_POINTER_UP:
+            {
+              // Re-anchor tracking to whichever finger remains so that the next single-finger
+              // MOVE continues smoothly instead of jump-scrolling.
+              int liftedIndex = ev.getActionIndex();
+              int remainingIndex = liftedIndex == 0 ? 1 : 0;
+              if (remainingIndex < ev.getPointerCount()) {
+                mLastMotionX = ev.getX(remainingIndex);
+                mLastMotionY = ev.getY(remainingIndex);
+              }
+              break;
+            }
+          case MotionEvent.ACTION_UP:
+          case MotionEvent.ACTION_CANCEL:
+            mIsBeingDragged = false;
+            mIsScaling = false;
+            break;
+        }
+        return true;
+      }
+    }
+
     if (ev.getAction() == MotionEvent.ACTION_DOWN && ev.getEdgeFlags() != 0) {
       // Don't handle edge touches immediately -- they may actually belong to one of our
       // descendants.
@@ -225,7 +293,10 @@ public class TwoDScrollView extends FrameLayout {
           }
         } else if (deltaX > 0) {
           final int rightEdge = getWidth() - getPaddingRight();
-          final int availableToScroll = getChildAt(0).getRight() - getScrollX() - rightEdge;
+          // Use the zoom-scaled width, otherwise dragging can't reach the edges of zoomed-in
+          // content.
+          final int scaledRight = getChildAt(0).getLeft() + scaledChildWidth(getChildAt(0));
+          final int availableToScroll = scaledRight - getScrollX() - rightEdge;
           if (availableToScroll > 0) {
             deltaX = Math.min(availableToScroll, deltaX);
           } else {
@@ -238,7 +309,8 @@ public class TwoDScrollView extends FrameLayout {
           }
         } else if (deltaY > 0) {
           final int bottomEdge = getHeight() - getPaddingBottom();
-          final int availableToScroll = getChildAt(0).getBottom() - getScrollY() - bottomEdge;
+          final int scaledBottom = getChildAt(0).getTop() + scaledChildHeight(getChildAt(0));
+          final int availableToScroll = scaledBottom - getScrollY() - bottomEdge;
           if (availableToScroll > 0) {
             deltaY = Math.min(availableToScroll, deltaY);
           } else {
@@ -292,6 +364,51 @@ public class TwoDScrollView extends FrameLayout {
     }
   }
 
+  /** The child's laid-out width, scaled by the current zoom factor. */
+  private int scaledChildWidth(@NonNull View child) {
+    return Math.round(child.getWidth() * zoomManager.getCurrentZoomFactor());
+  }
+
+  /** The child's laid-out height, scaled by the current zoom factor. */
+  private int scaledChildHeight(@NonNull View child) {
+    return Math.round(child.getHeight() * zoomManager.getCurrentZoomFactor());
+  }
+
+  /**
+   * {@link ZoomManager.OnZoomChangeListener} callback — actually applies the new zoom factor to our
+   * child (a scale transform, exactly like zooming into a photo) and adjusts the scroll offset so
+   * the point under the pinch focus (or the viewport center, for programmatic zoom calls) stays
+   * visually fixed.
+   */
+  private void applyZoomChange(float oldFactor, float newFactor, float focusX, float focusY) {
+    if (getChildCount() == 0) return;
+    View child = getChildAt(0);
+
+    if (focusX < 0 || focusY < 0) {
+      // No explicit pinch focus point (e.g. a programmatic setCurrentZoomScale call) —
+      // zoom around the center of the current viewport instead.
+      focusX = (getWidth() - getPaddingLeft() - getPaddingRight()) / 2f;
+      focusY = (getHeight() - getPaddingTop() - getPaddingBottom()) / 2f;
+    }
+
+    float viewportX = focusX - getPaddingLeft();
+    float viewportY = focusY - getPaddingTop();
+
+    // The content-space point currently sitting under the focus point, before re-scaling.
+    float contentX = (getScrollX() + viewportX) / oldFactor;
+    float contentY = (getScrollY() + viewportY) / oldFactor;
+
+    child.setPivotX(0f);
+    child.setPivotY(0f);
+    child.setScaleX(newFactor);
+    child.setScaleY(newFactor);
+
+    // Re-anchor scroll so that same content point is still under the focus point.
+    scrollTo(
+        Math.round(contentX * newFactor - viewportX), Math.round(contentY * newFactor - viewportY));
+    invalidate();
+  }
+
   /**
    * {@inheritDoc}
    *
@@ -303,8 +420,8 @@ public class TwoDScrollView extends FrameLayout {
     // we rely on the fact the View.scrollBy calls scrollTo.
     if (getChildCount() > 0) {
       View child = getChildAt(0);
-      x = clamp(x, getWidth() - getPaddingRight() - getPaddingLeft(), child.getWidth());
-      y = clamp(y, getHeight() - getPaddingBottom() - getPaddingTop(), child.getHeight());
+      x = clamp(x, getWidth() - getPaddingRight() - getPaddingLeft(), scaledChildWidth(child));
+      y = clamp(y, getHeight() - getPaddingBottom() - getPaddingTop(), scaledChildHeight(child));
       if (x != getScrollX() || y != getScrollY()) {
         super.scrollTo(x, y);
       }
@@ -337,8 +454,8 @@ public class TwoDScrollView extends FrameLayout {
       if (getChildCount() > 0) {
         View child = getChildAt(0);
         scrollTo(
-            clamp(x, getWidth() - getPaddingRight() - getPaddingLeft(), child.getWidth()),
-            clamp(y, getHeight() - getPaddingBottom() - getPaddingTop(), child.getHeight()));
+            clamp(x, getWidth() - getPaddingRight() - getPaddingLeft(), scaledChildWidth(child)),
+            clamp(y, getHeight() - getPaddingBottom() - getPaddingTop(), scaledChildHeight(child)));
       } else {
         scrollTo(x, y);
       }
@@ -406,14 +523,14 @@ public class TwoDScrollView extends FrameLayout {
   @Override
   protected int computeHorizontalScrollRange() {
     int count = getChildCount();
-    return count == 0 ? getWidth() : (getChildAt(0)).getRight();
+    return count == 0 ? getWidth() : scaledChildWidth(getChildAt(0));
   }
 
   /** The scroll range of a scroll view is the overall height of all of its children. */
   @Override
   protected int computeVerticalScrollRange() {
     int count = getChildCount();
-    return count == 0 ? getHeight() : (getChildAt(0)).getBottom();
+    return count == 0 ? getHeight() : scaledChildHeight(getChildAt(0));
   }
 
   @Override
@@ -461,9 +578,9 @@ public class TwoDScrollView extends FrameLayout {
   public void fling(int velocityX, int velocityY) {
     if (getChildCount() > 0) {
       int height = getHeight() - getPaddingBottom() - getPaddingTop();
-      int bottom = getChildAt(0).getHeight();
+      int bottom = scaledChildHeight(getChildAt(0));
       int width = getWidth() - getPaddingRight() - getPaddingLeft();
-      int right = getChildAt(0).getWidth();
+      int right = scaledChildWidth(getChildAt(0));
 
       mScroller.fling(
           getScrollX(), getScrollY(), velocityX, velocityY, 0, right - width, 0, bottom - height);
@@ -869,6 +986,12 @@ public class TwoDScrollView extends FrameLayout {
      * state and he is moving his finger.  We want to intercept this
      * motion.
      */
+    if (zoomManager.isZoomMod() && (mIsScaling || ev.getPointerCount() > 1)) {
+      // Claim the gesture for pinch-zooming as soon as a second finger touches down.
+      // (The event itself is fed to scaleGestureDetector once, inside onTouchEvent.)
+      return true;
+    }
+
     final int action = ev.getAction();
     if ((action == MotionEvent.ACTION_MOVE) && (mIsBeingDragged)) {
       return true;
@@ -929,8 +1052,9 @@ public class TwoDScrollView extends FrameLayout {
   private boolean canScroll() {
     View child = getChildAt(0);
     if (child != null) {
-      int childHeight = child.getHeight();
-      int childWidth = child.getWidth();
+      // Zoom-aware: once pinched in, content that used to fit the viewport can now overflow it.
+      int childHeight = scaledChildHeight(child);
+      int childWidth = scaledChildWidth(child);
       return (getHeight() < childHeight + getPaddingTop() + getPaddingBottom())
           || (getWidth() < childWidth + getPaddingLeft() + getPaddingRight());
     }
@@ -1113,5 +1237,73 @@ public class TwoDScrollView extends FrameLayout {
 
     final ViewParent theParent = child.getParent();
     return (theParent instanceof ViewGroup) && isViewDescendantOf((View) theParent, parent);
+  }
+
+  // ===================== Pinch-to-zoom public API ===================== //
+
+  /**
+   * Enables or disables pinch-to-zoom, similar to zooming into a photo.
+   *
+   * <p>غیرفعال کردنش فقط جیچر رو خاموش می‌کنه؛ سطح زوم فعلی دست نمی‌خوره — اگه می‌خوای برگرده رو
+   * ۱۰۰٪ هم از {@link #resetZoom()} استفاده کن.
+   */
+  public void setZoomMod(boolean enabled) {
+    zoomManager.setZoomMod(enabled);
+  }
+
+  /**
+   * @return whether pinch-to-zoom is currently enabled.
+   */
+  public boolean isZoomMod() {
+    return zoomManager.isZoomMod();
+  }
+
+  /**
+   * Sets the allowed pinch-zoom range, as percentages of the original size (100 = original size).
+   *
+   * @param minPercent minimum zoom, e.g. 50 for 50%
+   * @param maxPercent maximum zoom, e.g. 300 for 300%
+   */
+  public void setZoomScale(int minPercent, int maxPercent) {
+    zoomManager.setZoomScale(minPercent, maxPercent);
+  }
+
+  /**
+   * @return {@code [minPercent, maxPercent]} currently allowed.
+   */
+  @NonNull
+  public int[] getZoomScale() {
+    return zoomManager.getZoomScale();
+  }
+
+  public int getMinZoomScale() {
+    return zoomManager.getMinZoomScale();
+  }
+
+  public int getMaxZoomScale() {
+    return zoomManager.getMaxZoomScale();
+  }
+
+  /**
+   * @return the current zoom level as a percentage (100 = original size).
+   */
+  public int getCurrentZoomScale() {
+    return zoomManager.getCurrentZoomScale();
+  }
+
+  /** Programmatically sets the zoom level (percentage), clamped to the configured range. */
+  public void setCurrentZoomScale(int percent) {
+    zoomManager.setCurrentZoomScale(percent);
+  }
+
+  /** Resets the zoom level back to 100%. */
+  public void resetZoom() {
+    zoomManager.resetZoom();
+  }
+
+  /** Direct access to the underlying {@link ZoomManager}, if finer control is needed. */
+  @NonNull
+  public ZoomManager getZoomManager() {
+    return zoomManager;
   }
 }
