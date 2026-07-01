@@ -1,4 +1,4 @@
-package ir.hanzodev1375.filetreelib;
+package ir.hanzodev1375.filetreelibglide;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
@@ -10,15 +10,16 @@ import androidx.annotation.NonNull;
 
 import com.bumptech.glide.Glide;
 
-import java.io.File;
-
-import ir.hanzodev1375.filetreelib.core.TreeNode;
-import ir.hanzodev1375.filetreelib.drawablexml.DrawableXmlLoader;
-import ir.hanzodev1375.filetreelib.drawablexml.AlphaPatternDrawable;
 import ir.hanzodev1375.filetreelib.icons.BaseIconProvider;
 import ir.hanzodev1375.filetreelib.icons.DefaultIconProvider;
+import ir.hanzodev1375.filetreelib.core.TreeNode;
+import java.io.File;
 
-public class FileIconGlide extends BaseIconProvider {
+
+import ir.hanzodev1375.filetreelibglide.drawablexml.DrawableXmlLoader;
+import ir.hanzodev1375.filetreelibglide.drawablexml.AlphaPatternDrawable;
+
+public class FileIconGlide extends BaseIconProvider{
 
   private final DefaultIconProvider defaultProvider = new DefaultIconProvider();
 

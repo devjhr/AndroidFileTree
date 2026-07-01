@@ -1,4 +1,4 @@
-package ir.hanzodev1375.filetreelib.glide.music;
+package ir.hanzodev1375.filetreelibglide.glide.music;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;

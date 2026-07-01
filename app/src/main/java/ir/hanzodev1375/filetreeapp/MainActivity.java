@@ -6,7 +6,7 @@ import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import ir.hanzodev1375.filetreeapp.databinding.ActivityMainBinding;
-import ir.hanzodev1375.filetreelib.FileIconGlide;
+import ir.hanzodev1375.filetreelibglide.FileIconGlide;
 import ir.hanzodev1375.filetreelib.widget.FileTreeView;
 
 public class MainActivity extends AppCompatActivity {

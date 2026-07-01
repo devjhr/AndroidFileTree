@@ -24,7 +24,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.bumptech.glide.Glide;
-import ir.hanzodev1375.filetreelib.FileIconGlide;
+import ir.hanzodev1375.filetreelibglide.FileIconGlide; 
 import ir.hanzodev1375.filetreelib.drag.DragManager;
 import ir.hanzodev1375.filetreelib.widget.TreeView;
 import ir.hanzodev1375.filetreelib.widget.SelectionActionPanel;

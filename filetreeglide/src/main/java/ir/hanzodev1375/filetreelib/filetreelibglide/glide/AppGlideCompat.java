@@ -1,4 +1,4 @@
-package ir.hanzodev1375.filetreelib.glide;
+package ir.hanzodev1375.filetreelibglide.glide;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -10,11 +10,11 @@ import com.bumptech.glide.annotation.GlideModule;
 import com.bumptech.glide.module.LibraryGlideModule;
 import com.caverock.androidsvg.SVG;
 import android.graphics.drawable.PictureDrawable;
-import ir.hanzodev1375.filetreelib.glide.apkicon.ApkIconModelLoader;
-import ir.hanzodev1375.filetreelib.glide.svg.SvgDrawableTranscoder;
-import ir.hanzodev1375.filetreelib.glide.music.Mp3CoverLoaderFactory;
+import ir.hanzodev1375.filetreelibglide.glide.apkicon.ApkIconModelLoader;
+import ir.hanzodev1375.filetreelibglide.glide.svg.SvgDrawableTranscoder;
+import ir.hanzodev1375.filetreelibglide.glide.music.Mp3CoverLoaderFactory;
 import java.io.InputStream;
-import ir.hanzodev1375.filetreelib.glide.svg.SvgDecoder;
+import ir.hanzodev1375.filetreelibglide.glide.svg.SvgDecoder;
 
 @GlideModule
 public class AppGlideCompat extends LibraryGlideModule {

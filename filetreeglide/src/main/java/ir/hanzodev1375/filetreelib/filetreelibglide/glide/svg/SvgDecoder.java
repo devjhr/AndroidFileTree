@@ -1,4 +1,4 @@
-package ir.hanzodev1375.filetreelib.glide.svg;
+package ir.hanzodev1375.filetreelibglide.glide.svg;
 
 import static com.bumptech.glide.request.target.Target.SIZE_ORIGINAL;
 

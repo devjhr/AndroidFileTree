@@ -1,4 +1,4 @@
-package ir.hanzodev1375.filetreelib.drawablexml;
+package ir.hanzodev1375.filetreelibglide.drawablexml;
 
 import android.graphics.Canvas;
 import android.graphics.Color;

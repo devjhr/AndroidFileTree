@@ -1,4 +1,4 @@
-package ir.hanzodev1375.filetreelib.glide.svg;
+package ir.hanzodev1375.filetreelibglide.glide.svg;
 
 import android.graphics.Picture;
 import android.graphics.drawable.PictureDrawable;

@@ -5,6 +5,7 @@ import android.content.res.TypedArray;
 import android.graphics.Color;
 import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
+import androidx.core.graphics.ColorUtils;
 import com.google.android.material.color.MaterialColors;
 import ir.hanzodev1375.filetreelib.R;
 
@@ -48,10 +49,10 @@ public final class ThemeManager {
               R.attr.panelTextColor,
               R.attr.panelDividerColor
             });
-     
+
     textColor = a.getColor(0, get(R.attr.colorOnSurface));
     selectedBg = a.getColor(1, get(R.attr.colorSecondaryContainer));
-    hoveredBg = a.getColor(2, get(R.attr.colorSurfaceContainerHigh));
+    hoveredBg = a.getColor(2, get(getAlphaColor(R.attr.colorSurfaceContainerHigh)));
     treeLineColor = a.getColor(3, get(R.attr.colorOutlineVariant));
     searchHighlightColor = a.getColor(4, get(R.attr.colorTertiaryContainer));
     gitModifiedColor = a.getColor(5, get(R.attr.colorTertiary));
@@ -72,6 +73,10 @@ public final class ThemeManager {
 
   int get(int id) {
     return MaterialColors.getColor(context, id, 0);
+  }
+
+  int getAlphaColor(int color) {
+    return ColorUtils.setAlphaComponent(color, 128);
   }
 
   @ColorInt

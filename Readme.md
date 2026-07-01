@@ -4,6 +4,8 @@
 
 A production-ready Android TreeView library for building modern file explorers similar to Android Studio, Visual Studio Code, and desktop file managers.
 
+[![](https://jitpack.io/v/HanzoDev1375/AndroidFileTree.svg)](https://jitpack.io/#HanzoDev1375/AndroidFileTree)
+
 ## Features
 
 - Lazy loading folders
@@ -44,11 +46,62 @@ dependencyResolutionManagement {
 
 ```gradle
 	dependencies {
-	        implementation 'com.github.HanzoDev1375:AndroidFileTree:1.0.0'
+	        implementation 'com.github.HanzoDev1375.AndroidFileTree:filetreelib:1.1.1'
 	}
 ```
 
+## how to load vector xml and svg?
+### adding dependencies 
 
+```gradle
+	dependencies {
+	        implementation 'com.github.HanzoDev1375:AndroidFileTree:1.1.1'
+	        implementation 'com.github.HanzoDev1375.AndroidFileTree:filetreeglide:1.1.1'
+	}
+```
+for `FileTreeView`
+
+init FileTreeView
+
+```java
+var view = new FileTreeView(this);
+    view.setNodePath("/storage/emulated/0/");
+    view.loadTree();
+
+```
+### note not call back to on click in 1.1.1 soon adding 
+
+call `FileTreeView#getAdapter()` to onClick
+
+custom IconProvider
+```java
+
+FileTreeView#setIconProvider(#IconProvider);
+
+```
+or call GlideIconProvider
+
+```java
+   
+FileTreeView#setIconProvider(new FileIconGlide());
+
+```
+Custom Theme
+
+```java
+   var theme = FileTreeView#getTheme();
+   theme.setTextColor(Color.CYAN);
+   theme.setTreeLineColor(Color.parseColor("#fff888"));
+   theme.setSelectedBg(Color.parseColor("#ff4107"));
+```
+Zoom Mod 
+
+
+```java
+FileTreeView#setZoomMod(true);
+FileTreeView#setZoomScale(50,300);
+
+```
 ---
 
 # Permissions
