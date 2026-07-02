@@ -1,7 +1,7 @@
 <div align="center">
 
 [![](https://jitpack.io/v/HanzoDev1375/AndroidFileTree.svg)](https://jitpack.io/#HanzoDev1375/AndroidFileTree)
-[![License](https://img.shields.io/github/license/HanzoDev1375/AndroidFileTree)](./LICENSE)
+[![License](https://img.shields.io/github/license/devjhr/AndroidFileTree)](./LICENSE)
 
 # AndroidFileTree
 
