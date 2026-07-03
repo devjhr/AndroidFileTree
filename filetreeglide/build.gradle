@@ -18,6 +18,12 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+        }
+    }
 }
 
 dependencies {
@@ -27,4 +33,18 @@ dependencies {
     implementation 'com.caverock:androidsvg-aar:1.4'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
     
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
+
+                groupId = "com.github.HanzoDev1375"
+                artifactId = project.name
+                version = project.version.toString()
+            }
+        }
+    }
 }
