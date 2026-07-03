@@ -38,7 +38,7 @@ public final class TreeView extends RecyclerView {
   private boolean rainbowIndentGuides = false;
   @Nullable private int[] rainbowIndentGuideColors = null; // null => TreeDecoration's defaults
   private boolean animateExpand = true;
-  private long animDuration = 180L;
+  private long animDuration = 30L;
 
   @Nullable private ItemTouchHelper dragTouchHelper = null;
   @Nullable private DragManager dragManager = null;
@@ -66,7 +66,7 @@ public final class TreeView extends RecyclerView {
       showTreeLines = a.getBoolean(R.styleable.TreeView_tv_showTreeLines, true);
       rainbowIndentGuides = a.getBoolean(R.styleable.TreeView_tv_rainbowIndentGuides, false);
       animateExpand = a.getBoolean(R.styleable.TreeView_tv_animateExpand, true);
-      animDuration = a.getInt(R.styleable.TreeView_tv_animateDuration, 180);
+      animDuration = a.getInt(R.styleable.TreeView_tv_animateDuration, 30);
       a.recycle();
     }
 
@@ -262,6 +262,21 @@ public final class TreeView extends RecyclerView {
   @Nullable
   public TreeAdapter getTreeAdapter() {
     return treeAdapter;
+  }
+
+  /**
+   * How quickly consecutive children start appearing when a folder with many children is
+   * expanded (the "one by one" reveal pace). This is independent of {@code
+   * app:tv_animateDuration} / {@link #setExpandDuration}, which controls how long a single
+   * row's own fade/scale animation takes once it starts.
+   */
+  public void setStaggerStepDelay(long ms) {
+    if (treeAdapter != null) treeAdapter.setStaggerStepDelay(ms);
+  }
+
+  public void setExpandDuration(long ms) {
+    this.animDuration = ms;
+    if (animator != null) animator.setExpandDuration(ms);
   }
 
   @Override

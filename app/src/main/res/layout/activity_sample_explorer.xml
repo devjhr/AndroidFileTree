@@ -29,7 +29,7 @@
             android:layout_height="wrap_content"
             app:tv_showTreeLines="true"
             app:tv_animateExpand="true"
-            app:tv_animateDuration="180"
+            app:tv_animateDuration="45"
             app:tv_indentWidth="20dp" />
     
     </ir.hanzodev1375.filetreelib.widget.TwoDScrollView>
