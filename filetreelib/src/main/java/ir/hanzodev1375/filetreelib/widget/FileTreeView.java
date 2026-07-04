@@ -924,7 +924,7 @@ public class FileTreeView extends LinearLayout {
           if (isMipmap && !isLauncherIconName(nameNoExt)) {
             // Rare: some projects keep a non-launcher icon in mipmap too. There's no reason to
             // merge it by name across qualifiers like the launcher icon — just list it plainly.
-            typeGroup.addChild(realFileNode(file));
+            typeGroup.addChild(realFileNode(file, qualifierLabel(base, variant)));
             continue;
           }
 
@@ -937,7 +937,7 @@ public class FileTreeView extends LinearLayout {
             typeGroup.addChild(fileGroup);
             byFileName.put(nameNoExt, fileGroup);
           }
-          fileGroup.addChild(realFileNode(file));
+          fileGroup.addChild(realFileNode(file, qualifierLabel(base, variant)));
           fileGroup.setHasChildren(true);
         }
       }
@@ -950,6 +950,20 @@ public class FileTreeView extends LinearLayout {
    * only names in {@code mipmap} that get merged by name across density qualifiers. */
   private static boolean isLauncherIconName(@NonNull String nameNoExt) {
     return nameNoExt.startsWith("ic_launcher");
+  }
+
+  /**
+   * Readable qualifier for a file grouped under {@link #buildResGroup} — e.g. {@code "hdpi"} for
+   * a file from {@code mipmap-hdpi}, {@code "night"} for one from {@code values-night}, or {@code
+   * "default"} for the unqualified {@code values}/{@code mipmap} folder itself. Shown via {@link
+   * ir.hanzodev1375.filetreelib.model.FilePayload#getDescription()} next to the file name, so
+   * when several same-named files collapse into one group it's still clear which physical file
+   * (which density, which mode) each row actually is.
+   */
+  @NonNull
+  private static String qualifierLabel(@NonNull String base, @NonNull File variant) {
+    String name = variant.getName();
+    return name.equals(base) ? "default" : name.substring(base.length() + 1);
   }
 
   /** Bare, not-yet-attached {@link TreeNode#TYPE_VIRTUAL} group — callers add children then attach it. */
@@ -973,10 +987,19 @@ public class FileTreeView extends LinearLayout {
   /** Real leaf file node pointing at {@code f} (tapping it opens the real file, same as anywhere else). */
   @NonNull
   private TreeNode realFileNode(@NonNull File f) {
+    return realFileNode(f, null);
+  }
+
+  /** Same as {@link #realFileNode(File)}, with a description shown next to the file name — used
+   * by {@link #buildResGroup} to label which qualifier (density/mode) a grouped file came from. */
+  @NonNull
+  private TreeNode realFileNode(@NonNull File f, @Nullable String description) {
+    FilePayload.Builder pb = new FilePayload.Builder(f.getAbsolutePath(), false);
+    if (description != null) pb.description(description);
     return new TreeNode.Builder(f.getName())
         .setId(f.getAbsolutePath())
         .setType(TreeNode.TYPE_FILE)
-        .setPayload(new FilePayload.Builder(f.getAbsolutePath(), false).build())
+        .setPayload(pb.build())
         .build();
   }
 
