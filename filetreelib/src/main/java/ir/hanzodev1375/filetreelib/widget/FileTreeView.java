@@ -7,10 +7,13 @@ import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.util.AttributeSet;
 import android.widget.PopupMenu;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputLayout;
 import ir.hanzodev1375.filetreelib.R;
@@ -30,11 +33,18 @@ import ir.hanzodev1375.filetreelib.search.TreeSearchEngine;
 import ir.hanzodev1375.filetreelib.search.TreeFilter;
 import java.util.ArrayList;
 import java.util.List;
+import ir.hanzodev1375.filetreelib.core.ModuleType;
+import ir.hanzodev1375.filetreelib.core.ModuleUtils;
 import ir.hanzodev1375.filetreelib.model.SearchResult;
 import ir.hanzodev1375.filetreelib.core.TreeNode;
 import java.io.File;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import ir.hanzodev1375.filetreelib.callbacks.OnNodeCallBack;
@@ -59,7 +69,15 @@ public class FileTreeView extends LinearLayout {
   private int pendingIconArrowRes = 0;
   private BreadcrumbBar breadcrumbbar;
   private TreeNode rootTreeNode;
-
+  private View footerActionRow;
+  private View footerActionDivider;
+  private View footerActionClickTarget;
+  private ImageView footerActionIcon;
+  private TextView footerActionText;
+  private boolean androidMod = false;
+  private TreeNode androidModGroup = null;
+  private View.OnClickListener androidModGitInitListener = null;
+  private DragManager dragManager;
   public FileTreeView(Context context) {
     super(context);
     init();
@@ -85,7 +103,12 @@ public class FileTreeView extends LinearLayout {
     scrollContainer = v.findViewById(R.id.two_d_scroll_view);
     selectionPanel = v.findViewById(R.id.selectionPanel);
     breadcrumbbar = v.findViewById(R.id.breadcrumb_bar);
-
+    footerActionRow = v.findViewById(R.id.tree_footer_action);
+    footerActionDivider = v.findViewById(R.id.tree_footer_divider);
+    footerActionClickTarget = v.findViewById(R.id.tree_footer_row);
+    footerActionIcon = v.findViewById(R.id.tree_footer_icon);
+    footerActionText = v.findViewById(R.id.tree_footer_text);
+    
     EditText etSearch = v.findViewById(R.id.et_search);
     TextInputLayout nodesearch = v.findViewById(R.id.nodesearch);
     if (!showSearchBar) {
@@ -98,6 +121,8 @@ public class FileTreeView extends LinearLayout {
     treeFilter = new TreeFilter();
     searchExecutor = Executors.newSingleThreadScheduledExecutor();
     breadcrumbbar.setTheme(theme);
+    footerActionDivider.setBackgroundColor(theme.getTreeLineColor());
+    footerActionText.setTextColor(theme.getTextColor());
     // NOTE: root path is set from loadTree() once nodePath/rootDir are known — calling it here
     // would pass null (setNodePath() hasn't run yet) and blow up in BreadcrumbBar.splitPath().
     breadcrumbbar.setOnSegmentClickListener(
@@ -118,6 +143,8 @@ public class FileTreeView extends LinearLayout {
           }
         });
 
+    // Registered once here (not in loadTree()) so re-rooting the tree via the breadcrumb doesn't
+    // pile up duplicate listeners that would each fire on every filesystem change.
     fileWatcher.addListener(
         new FileWatcher.FileChangeListener() {
           @Override
@@ -207,6 +234,7 @@ public class FileTreeView extends LinearLayout {
     // background executor or keep watching a directory we no longer show.
     if (controller != null) controller.destroy();
     if (fileWatcher != null) fileWatcher.unwatchAll();
+    androidModGroup = null;
 
     File rootDir = new File(getNodePath());
     FilePayload rootPayload = new FilePayload.Builder(rootDir.getAbsolutePath(), true).build();
@@ -235,7 +263,7 @@ public class FileTreeView extends LinearLayout {
     // selected-node extension from the tree we just replaced).
     breadcrumbbar.setRootPath(rootDir.getAbsolutePath());
 
-    DragManager dragManager = new DragManager(controller);
+    dragManager = new DragManager(controller);
     treeView.attachDragManager(dragManager);
 
     if (adapter != null) {
@@ -246,7 +274,7 @@ public class FileTreeView extends LinearLayout {
       adapter.setOnNodeClickListener(
           (node, view) -> {
             breadcrumbbar.setSelectedNode(node, rootTreeNode);
-            if (node.isFolder()) {
+            if (node.isFolder() || node.isVirtual()) {
               lastOpenedFolder = node;
               controller.toggleNode(node);
             } else {
@@ -323,11 +351,23 @@ public class FileTreeView extends LinearLayout {
 
           @Override
           public void onRename(@NonNull TreeNode node) {
+            if (node.isVirtual()) {
+              Toast.makeText(getContext(), "Virtual folders can't be renamed", Toast.LENGTH_SHORT)
+                  .show();
+              return;
+            }
             showRenameDialog(node);
           }
 
           @Override
           public void onDelete(@NonNull List<TreeNode> nodes) {
+            for (TreeNode n : nodes) {
+              if (n.isVirtual()) {
+                Toast.makeText(getContext(), "Virtual folders can't be deleted", Toast.LENGTH_SHORT)
+                    .show();
+                return;
+              }
+            }
             new MaterialAlertDialogBuilder(getContext())
                 .setTitle("Delete")
                 .setMessage("Delete " + nodes.size() + " item(s)?")
@@ -360,14 +400,15 @@ public class FileTreeView extends LinearLayout {
           @Override
           public void onMore(@NonNull List<TreeNode> nodes, @NonNull View anchor) {
             PopupMenu popup = new PopupMenu(getContext(), anchor);
-            popup.getMenu().add(0, 1, 0, "Rename");
+            boolean singleRealNode = nodes.size() == 1 && !nodes.get(0).isVirtual();
+            if (singleRealNode) popup.getMenu().add(0, 1, 0, "Rename");
             popup.getMenu().add(0, 2, 0, "New Folder");
             popup.getMenu().add(0, 3, 0, "New File");
             popup.setOnMenuItemClickListener(
                 item -> {
                   switch (item.getItemId()) {
                     case 1:
-                      if (nodes.size() == 1) showRenameDialog(nodes.get(0));
+                      if (singleRealNode) showRenameDialog(nodes.get(0));
                       return true;
                     case 2:
                       TreeNode p2 =
@@ -398,6 +439,8 @@ public class FileTreeView extends LinearLayout {
         });
 
     fileWatcher.watch(rootDir.getAbsolutePath());
+
+    if (androidMod) applyAndroidMod();
   }
 
   private void showRenameDialog(@NonNull TreeNode node) {
@@ -490,6 +533,508 @@ public class FileTreeView extends LinearLayout {
     if (adapter != null) adapter.refreshNode(node.getId());
   }
 
+  /**
+   * Adds a synthetic grouping folder at the top level of the tree — e.g. Android Studio's "Gradle
+   * Scripts" node, which gathers files that actually live in several different real directories
+   * under one heading. Call after {@link #loadTree()}.
+   *
+   * <p>Example:
+   *
+   * <pre>{@code
+   * TreeNode settings = new TreeNode.Builder("settings.gradle.kts")
+   *     .setId(settingsPath)
+   *     .setPayload(new FilePayload.Builder(settingsPath, false)
+   *         .description("(Project: Settings)")
+   *         .build())
+   *     .build();
+   * fileTreeView.addVirtualGroup("Gradle Scripts", R.drawable.ic_filetree_folder_gradle,
+   *     java.util.Arrays.asList(settings, buildFile, gradleProps));
+   * }</pre>
+   *
+   * @param name the group's display name (e.g. "Gradle Scripts")
+   * @param iconRes drawable resource used for the group's own folder icon
+   * @param children fully-built nodes to show inside the group — typically real files elsewhere in
+   *     the project, each with its own {@link FilePayload} (so tapping one opens the real file) and
+   *     optionally a {@link FilePayload.Builder#description} hint like "(Module :app)"
+   * @return the created virtual node, or {@code null} if {@link #loadTree()} hasn't run yet
+   */
+  @Nullable
+  public TreeNode addVirtualGroup(
+      @NonNull String name, int iconRes, @NonNull List<TreeNode> children) {
+    if (controller == null || rootTreeNode == null) return null;
+    TreeNode group =
+        new TreeNode.Builder(name)
+            .setId(rootTreeNode.getId() + "::virtual::" + name)
+            .setType(TreeNode.TYPE_VIRTUAL)
+            .setHasChildren(!children.isEmpty())
+            .build();
+    group.setTag(iconRes);
+    for (TreeNode child : children) {
+      group.addChild(child);
+    }
+    controller.insertVirtualGroup(rootTreeNode, group, -1);
+    return group;
+  }
+
+  /**
+   * Shows a persistent, tappable row pinned below the tree — e.g. Android Studio's "Initialize
+   * Git" prompt. Generic: use it for any call-to-action that isn't tied to a specific node (a
+   * "Sync now", "Connect a remote", etc. row all fit the same shape).
+   *
+   * @param iconRes drawable resource shown on the left of the row
+   * @param text label text
+   * @param onClick called when the row is tapped
+   */
+  public void setFooterAction(int iconRes, @NonNull String text, @NonNull View.OnClickListener onClick) {
+    footerActionIcon.setImageResource(iconRes);
+    footerActionText.setText(text);
+    footerActionClickTarget.setOnClickListener(onClick);
+    footerActionRow.setVisibility(View.VISIBLE);
+  }
+
+  /** Hides the footer action row shown by {@link #setFooterAction}. */
+  public void hideFooterAction() {
+    footerActionRow.setVisibility(View.GONE);
+    footerActionClickTarget.setOnClickListener(null);
+  }
+
+  // -------------------------------------------------------------------------
+  // Android Studio-style "Android" project view — one-call convenience built on top of
+  // addVirtualGroup() / setFooterAction() / FilePayload's description+badgeColor.
+  // -------------------------------------------------------------------------
+
+  /**
+   * Module-dot color by {@link ModuleType}, so an app module reads differently from a library at
+   * a glance — the same way Android Studio's own project view distinguishes them. {@code
+   * NOT_A_MODULE} is intentionally absent: those folders never reach {@link #moduleBadgeColor}.
+   */
+  private static int moduleBadgeColor(@NonNull ModuleType type) {
+    switch (type) {
+      case ANDROID_APP:
+        return 0xFF8A63FF; // purple
+      case ANDROID_LIBRARY:
+        return 0xFF42A5F5; // blue
+      case JAVA_LIBRARY:
+        return 0xFFFFA726; // orange
+      case KOTLIN_JVM:
+        return 0xFF26A69A; // teal
+      case GENERIC_MODULE:
+      default:
+        return 0xFF9E9E9E; // grey
+    }
+  }
+
+  /** Short human label by {@link ModuleType}, appended to a module folder's description. */
+  private static String moduleTypeLabel(@NonNull ModuleType type) {
+    switch (type) {
+      case ANDROID_APP:
+        return "Android Application";
+      case ANDROID_LIBRARY:
+        return "Android Library";
+      case JAVA_LIBRARY:
+        return "Java Library";
+      case KOTLIN_JVM:
+        return "Kotlin";
+      case GENERIC_MODULE:
+      default:
+        return "Module";
+    }
+  }
+
+  /**
+   * Single toggle that makes the tree look and behave like Android Studio's "Android" project
+   * view: root-level Gradle files (plus each module's own build.gradle) get gathered under a
+   * "Gradle Scripts" group, module folders get a colored dot, and an "Initialize Git" row shows
+   * below the tree if the project has no {@code .git} yet.
+   *
+   * <p>Only kicks in when the current root actually looks like a Gradle project (contains {@code
+   * settings.gradle}/{@code .kts}); otherwise it's a harmless no-op. Re-applies automatically every
+   * time {@link #loadTree()} runs — including re-roots via the breadcrumb — so this only needs to
+   * be called once, in any order relative to {@link #setNodePath} / {@link #loadTree()}.
+   *
+   * @param enabled turn the mode on or off
+   */
+  public void setAndroidMod(boolean enabled) {
+    this.androidMod = enabled;
+    if (enabled) {
+      applyAndroidMod();
+    } else {
+      removeAndroidMod();
+    }
+  }
+
+  public boolean isAndroidMod() {
+    return androidMod;
+  }
+
+  /**
+   * Optional: hook the tap on the "Initialize Git" row that {@link #setAndroidMod} shows
+   * automatically. Not required — the mode looks and works fine without it, the row just won't do
+   * anything when tapped.
+   */
+  public void setOnInitGitClickListener(@Nullable View.OnClickListener listener) {
+    this.androidModGitInitListener = listener;
+  }
+
+  private void applyAndroidMod() {
+    if (controller == null || rootTreeNode == null) return;
+
+    String rootPath = rootTreeNode.getId();
+    boolean isGradleProject =
+        firstExisting(new File(rootPath), "settings.gradle.kts", "settings.gradle") != null;
+    if (!isGradleProject) {
+      hideFooterAction();
+      return;
+    }
+
+    // Module discovery below walks the filesystem directly with java.io.File — same as the
+    // Gradle-script lookup already did — so, unlike before, it no longer needs root's real
+    // (lazily-loaded) children to exist first. That whole "wait for the real children to arrive,
+    // then apply" dance is gone; buildAndroidModContent() below builds the whole replacement
+    // subtree up front and swaps it in.
+    buildAndroidModContent(rootPath);
+  }
+
+  /**
+   * Replaces {@code rootTreeNode}'s children with exactly what Android Studio's "Android" project
+   * view shows: the flattened list of Gradle modules found anywhere under the root (however deep
+   * they're nested — a module 3 folders down still lands as a direct child, same as {@code :app}
+   * and {@code :feature:settings} both show as top-level entries in Android Studio) plus one
+   * "Gradle Scripts" group. Everything else — stray root files, non-module folders, folders that
+   * only exist to hold other folders — is intentionally left out entirely, matching the reference
+   * project's {@code buildLocalTree}/{@code buildHierarchicalTreeLocal}. This is not a filtered
+   * file browser; it's a project-structure view.
+   */
+  private void buildAndroidModContent(@NonNull String rootPath) {
+    File rootDir = new File(rootPath);
+    List<TreeNode> scripts = new ArrayList<>();
+    addGradleFileIfExists(scripts, rootPath, "settings.gradle.kts", "settings.gradle", "(Project: Settings)");
+    addGradleFileIfExists(scripts, rootPath, "build.gradle.kts", "build.gradle", "(Project: Build)");
+    addGradleFileIfExists(scripts, rootPath, "gradle.properties", null, "(Project: Properties)");
+    addGradleFileIfExists(scripts, rootPath, "proguard-rules.pro", null, "(Project: proguard-rules)");
+    addGradleFileIfExists(scripts, rootPath, "local.properties", null, "(SDK Location)");
+
+    List<TreeNode> modules = new ArrayList<>();
+    discoverAndroidModTree(rootDir, modules, scripts, new HashMap<>());
+
+    // TreeNode.setChildren() is a raw structural mutation — safe only while the node isn't
+    // currently expanded (no visible rows depend on its old children). Collapse first if needed,
+    // swap the children, then re-expand through the controller so the adapter is notified properly
+    // instead of going stale.
+    boolean wasExpanded = rootTreeNode.isExpanded();
+    if (wasExpanded) controller.collapseNode(rootTreeNode);
+    rootTreeNode.setChildren(modules);
+    controller.expandNode(rootTreeNode);
+
+    if (!scripts.isEmpty()) {
+      androidModGroup =
+          addVirtualGroup("Gradle Scripts", R.drawable.ic_filetree_folder_gradle, scripts);
+    }
+
+    if (new File(rootPath, ".git").isDirectory()) {
+      hideFooterAction();
+    } else {
+      setFooterAction(
+          R.drawable.ic_filetree_git,
+          "Initialize Git",
+          v -> {
+            if (androidModGitInitListener != null) androidModGitInitListener.onClick(v);
+          });
+    }
+  }
+
+  /**
+   * Recursively walks {@code dir}, flattening every Gradle module found (at any depth) into
+   * {@code outModules} and collecting each module's own {@code build.gradle}(.kts) into {@code
+   * outScripts}. A folder that isn't itself a module but contains one somewhere below it is walked
+   * through without adding a node for the folder itself — it never appears in the tree, only the
+   * modules inside it do. A folder that is neither a module nor contains one anywhere below it is
+   * skipped entirely. Ported from the reference project's {@code buildHierarchicalTreeLocal} +
+   * {@code localContainsModules}.
+   */
+  private void discoverAndroidModTree(
+      @NonNull File dir,
+      @NonNull List<TreeNode> outModules,
+      @NonNull List<TreeNode> outScripts,
+      @NonNull Map<String, Boolean> containsModuleCache) {
+    File[] subDirs = dir.listFiles(File::isDirectory);
+    if (subDirs == null) return;
+    Arrays.sort(subDirs, Comparator.comparing(File::getName, String.CASE_INSENSITIVE_ORDER));
+
+    for (File sub : subDirs) {
+      if (isAndroidModSkipDir(sub.getName())) continue;
+
+      ModuleType type = ModuleUtils.getModuleType(sub);
+      if (type != ModuleType.NOT_A_MODULE) {
+        String typeLabel = moduleTypeLabel(type);
+        File moduleBuild = firstExisting(sub, "build.gradle.kts", "build.gradle");
+        if (moduleBuild != null) {
+          outScripts.add(
+              gradleFileNode(moduleBuild, "(Module :" + sub.getName() + " · " + typeLabel + ")"));
+        }
+        outModules.add(buildModuleNode(sub, type, typeLabel));
+        // A module can itself contain nested modules — keep looking, still flattened into the
+        // same outModules list (mirrors the reference always recursing against rootNode).
+        discoverAndroidModTree(sub, outModules, outScripts, containsModuleCache);
+      } else if (containsModuleSomewhereBelow(sub, containsModuleCache)) {
+        discoverAndroidModTree(sub, outModules, outScripts, containsModuleCache);
+      }
+      // else: not a module, and nothing under it is either → not shown at all.
+    }
+  }
+
+  private boolean containsModuleSomewhereBelow(
+      @NonNull File dir, @NonNull Map<String, Boolean> cache) {
+    String key = dir.getAbsolutePath();
+    Boolean cached = cache.get(key);
+    if (cached != null) return cached;
+
+    boolean result = false;
+    File[] subDirs = dir.listFiles(File::isDirectory);
+    if (subDirs != null) {
+      for (File sub : subDirs) {
+        if (isAndroidModSkipDir(sub.getName())) continue;
+        if (ModuleUtils.getModuleType(sub) != ModuleType.NOT_A_MODULE
+            || containsModuleSomewhereBelow(sub, cache)) {
+          result = true;
+          break;
+        }
+      }
+    }
+    cache.put(key, result);
+    return result;
+  }
+
+  private static boolean isAndroidModSkipDir(@NonNull String name) {
+    return name.equals("build")
+        || name.equals(".git")
+        || name.equals(".gradle")
+        || name.equals(".kotlin")
+        || name.equals(".idea")
+        || name.equals(".androidpe");
+  }
+
+  /** Builds one flattened module node — badge/description set on it directly, then restructured. */
+  @NonNull
+  private TreeNode buildModuleNode(
+      @NonNull File moduleDir, @NonNull ModuleType type, @NonNull String typeLabel) {
+    FilePayload payload =
+        new FilePayload.Builder(moduleDir.getAbsolutePath(), true)
+            .badgeColor(moduleBadgeColor(type))
+            .description(typeLabel)
+            .build();
+    TreeNode moduleNode =
+        new TreeNode.Builder(moduleDir.getName())
+            .setId(moduleDir.getAbsolutePath())
+            .setType(TreeNode.TYPE_FOLDER)
+            .setPayload(payload)
+            .build();
+    restructureModuleNode(moduleNode, moduleDir);
+    return moduleNode;
+  }
+
+
+  /**
+   * Rebuilds {@code moduleNode}'s children to mirror Android Studio's "Android" project view for
+   * a single module: a {@code manifests} group holding {@code src/main/AndroidManifest.xml}, the
+   * {@code java}/{@code kotlin} source roots promoted to direct children, generated sources/res
+   * from {@code build/generated}, a {@code res} group with same-name resources merged across
+   * qualifiers (see {@link #buildResGroup}), and {@code assets} — ported from the reference
+   * project's {@code addLocalModuleNode}/{@code buildLocalResTree}.
+   *
+   * <p>Anything in the module folder that doesn't match one of those slots (custom top-level
+   * files, non-standard folders) is intentionally left out, same as the reference — this view is
+   * meant to look exactly like Android Studio's, not like a raw file browser.
+   *
+   * <p>Runs synchronously on the caller's thread (same as the rest of {@code buildAndroidModContent}).
+   * For modules with very large {@code res} trees this walks every qualifier folder up front, so if
+   * that ever shows up as jank on a huge project, move the call in {@link #buildAndroidModContent}
+   * onto a background thread and post the resulting node list back with {@link #post}.
+   *
+   * @param moduleNode the already-loaded module folder node (real, non-virtual)
+   * @param moduleDir the same folder as a {@link File}
+   */
+  private void restructureModuleNode(@NonNull TreeNode moduleNode, @NonNull File moduleDir) {
+    List<TreeNode> children = new ArrayList<>();
+
+    File manifest = new File(moduleDir, "src/main/AndroidManifest.xml");
+    if (manifest.isFile()) {
+      TreeNode manifestsGroup =
+          virtualGroupNode(moduleDir.getAbsolutePath() + "::virtual::manifests", "manifests");
+      manifestsGroup.addChild(realFileNode(manifest));
+      manifestsGroup.setHasChildren(true);
+      children.add(manifestsGroup);
+    }
+
+    File javaDir = new File(moduleDir, "src/main/java");
+    if (javaDir.isDirectory()) children.add(realFolderNode(javaDir));
+
+    File kotlinDir = new File(moduleDir, "src/main/kotlin");
+    if (kotlinDir.isDirectory()) children.add(realFolderNode(kotlinDir));
+
+    File generatedJava = new File(moduleDir, "build/generated/source");
+    if (generatedJava.isDirectory()) children.add(realFolderNode(generatedJava));
+
+    File generatedRes = new File(moduleDir, "build/generated/res");
+    if (generatedRes.isDirectory()) children.add(realFolderNode(generatedRes));
+
+    File resDir = new File(moduleDir, "src/main/res");
+    if (resDir.isDirectory()) {
+      TreeNode resGroup = virtualGroupNode(resDir.getAbsolutePath() + "::virtual::res", "res");
+      buildResGroup(resDir, resGroup);
+      resGroup.setHasChildren(resGroup.getChildCount() > 0);
+      children.add(resGroup);
+    }
+
+    File assetsDir = new File(moduleDir, "src/main/assets");
+    if (assetsDir.isDirectory()) children.add(realFolderNode(assetsDir));
+
+    if (!children.isEmpty()) {
+      moduleNode.setChildren(children);
+      moduleNode.setLazyLoadPending(false);
+    }
+  }
+
+  /**
+   * Groups {@code resDir}'s immediate subfolders the way Android Studio's Android view does:
+   * {@code drawable}/{@code layout}/{@code mipmap}/{@code values} (and their qualified variants
+   * like {@code drawable-night}, {@code layout-land}) are merged by base name into one virtual
+   * group, and within it every file sharing a name across qualifiers (e.g. {@code activity_main.xml}
+   * from both {@code layout} and {@code layout-land}) collapses into one expandable row. Folder
+   * types outside that set ({@code menu}, {@code anim}, {@code raw}, {@code font}, ...) are added
+   * as plain, still-lazily-loadable real folders. Ported from the reference project's
+   * {@code buildLocalResTree}.
+   */
+  private void buildResGroup(@NonNull File resDir, @NonNull TreeNode resGroup) {
+    File[] resFolders = resDir.listFiles(File::isDirectory);
+    if (resFolders == null) return;
+
+    Set<String> virtualTypes = new HashSet<>(Arrays.asList("drawable", "layout", "mipmap", "values"));
+    Map<String, List<File>> grouped = new LinkedHashMap<>();
+    for (File f : resFolders) {
+      String name = f.getName();
+      int dash = name.indexOf('-');
+      String base = dash > 0 ? name.substring(0, dash) : name;
+      grouped.computeIfAbsent(base, k -> new ArrayList<>()).add(f);
+    }
+
+    for (Map.Entry<String, List<File>> entry : grouped.entrySet()) {
+      String base = entry.getKey();
+      List<File> variants = entry.getValue();
+
+      if (!virtualTypes.contains(base)) {
+        for (File variant : variants) resGroup.addChild(realFolderNode(variant));
+        continue;
+      }
+
+      TreeNode typeGroup =
+          virtualGroupNode(resDir.getAbsolutePath() + "::virtual::res::" + base, base);
+      Map<String, TreeNode> byFileName = new LinkedHashMap<>();
+      for (File variant : variants) {
+        File[] files = variant.listFiles();
+        if (files == null) continue;
+        Arrays.sort(files, Comparator.comparing(File::getName, String.CASE_INSENSITIVE_ORDER));
+        for (File file : files) {
+          String fileName = file.getName();
+          if (fileName.startsWith(".")) continue;
+          int dot = fileName.lastIndexOf('.');
+          String nameNoExt = dot > 0 ? fileName.substring(0, dot) : fileName;
+          TreeNode fileGroup = byFileName.get(nameNoExt);
+          if (fileGroup == null) {
+            fileGroup =
+                virtualGroupNode(
+                    resDir.getAbsolutePath() + "::virtual::res::" + base + "::" + nameNoExt,
+                    nameNoExt);
+            typeGroup.addChild(fileGroup);
+            byFileName.put(nameNoExt, fileGroup);
+          }
+          fileGroup.addChild(realFileNode(file));
+          fileGroup.setHasChildren(true);
+        }
+      }
+      typeGroup.setHasChildren(typeGroup.getChildCount() > 0);
+      resGroup.addChild(typeGroup);
+    }
+  }
+
+  /** Bare, not-yet-attached {@link TreeNode#TYPE_VIRTUAL} group — callers add children then attach it. */
+  @NonNull
+  private TreeNode virtualGroupNode(@NonNull String id, @NonNull String name) {
+    return new TreeNode.Builder(name).setId(id).setType(TreeNode.TYPE_VIRTUAL).build();
+  }
+
+  /** Real, still-lazily-loadable folder node pointing at {@code dir} (expand triggers the normal provider). */
+  @NonNull
+  private TreeNode realFolderNode(@NonNull File dir) {
+    String[] entries = dir.list();
+    return new TreeNode.Builder(dir.getName())
+        .setId(dir.getAbsolutePath())
+        .setType(TreeNode.TYPE_FOLDER)
+        .setHasChildren(entries != null && entries.length > 0)
+        .setPayload(new FilePayload.Builder(dir.getAbsolutePath(), true).build())
+        .build();
+  }
+
+  /** Real leaf file node pointing at {@code f} (tapping it opens the real file, same as anywhere else). */
+  @NonNull
+  private TreeNode realFileNode(@NonNull File f) {
+    return new TreeNode.Builder(f.getName())
+        .setId(f.getAbsolutePath())
+        .setType(TreeNode.TYPE_FILE)
+        .setPayload(new FilePayload.Builder(f.getAbsolutePath(), false).build())
+        .build();
+  }
+
+  private void removeAndroidMod() {
+    androidModGroup = null;
+    if (controller != null && rootTreeNode != null) {
+      // Everything under rootTreeNode is synthetic while android mod is on (see
+      // buildAndroidModContent/discoverAndroidModTree) — there's no per-node badge/description to
+      // undo individually anymore. Just drop the whole subtree and mark root as needing a fresh
+      // lazy load, so the real on-disk structure comes back instead of the flattened module view.
+      boolean wasExpanded = rootTreeNode.isExpanded();
+      if (wasExpanded) controller.collapseNode(rootTreeNode);
+      rootTreeNode.clearChildren();
+      rootTreeNode.setHasChildren(true);
+      rootTreeNode.setLazyLoadPending(false);
+      if (wasExpanded) controller.expandNode(rootTreeNode);
+    }
+    hideFooterAction();
+  }
+
+  private void addGradleFileIfExists(
+      @NonNull List<TreeNode> out,
+      @NonNull String dirPath,
+      @NonNull String name1,
+      @Nullable String name2,
+      @NonNull String description) {
+    File f = firstExisting(new File(dirPath), name1, name2);
+    if (f != null) out.add(gradleFileNode(f, description));
+  }
+
+  @Nullable
+  private File firstExisting(@NonNull File dir, @Nullable String name1, @Nullable String name2) {
+    if (name1 != null) {
+      File f = new File(dir, name1);
+      if (f.exists()) return f;
+    }
+    if (name2 != null) {
+      File f = new File(dir, name2);
+      if (f.exists()) return f;
+    }
+    return null;
+  }
+
+  @NonNull
+  private TreeNode gradleFileNode(@NonNull File f, @NonNull String description) {
+    String path = f.getAbsolutePath();
+    return new TreeNode.Builder(f.getName())
+        .setId(path)
+        .setType(TreeNode.TYPE_FILE)
+        .setPayload(new FilePayload.Builder(path, false).description(description).build())
+        .build();
+  }
+
   public void putDestroy() {
 
     if (selectionPanel != null) selectionPanel.detach();
@@ -512,6 +1057,17 @@ public class FileTreeView extends LinearLayout {
 
   public void setAdapter(TreeAdapter adapter) {
     this.adapter = adapter;
+  }
+
+  /**
+   * Returns the {@link TreeController} driving this view (built fresh by every {@link
+   * #loadTree()} call), or {@code null} before the first {@link #loadTree()}. Needed for direct
+   * model access — e.g. {@code getController().getModel().findNodeById(path)} to look up a node
+   * and tweak its {@link FilePayload} (badge color, description) after the tree is already loaded.
+   */
+  @Nullable
+  public TreeController getController() {
+    return this.controller;
   }
 
   public ThemeManager getTheme() {
