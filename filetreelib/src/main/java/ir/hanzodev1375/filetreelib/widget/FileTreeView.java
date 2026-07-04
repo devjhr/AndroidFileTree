@@ -70,6 +70,8 @@ public class FileTreeView extends LinearLayout {
   private boolean androidMod = false;
   private TreeNode androidModGroup = null;
   private DragManager dragManager;
+  private ExecutorService androidModExecutor;
+  private int androidModApplyToken = 0;
   public FileTreeView(Context context) {
     super(context);
     init();
@@ -107,6 +109,7 @@ public class FileTreeView extends LinearLayout {
     searchEngine = new TreeSearchEngine();
     treeFilter = new TreeFilter();
     searchExecutor = Executors.newSingleThreadScheduledExecutor();
+    androidModExecutor = Executors.newSingleThreadExecutor();
     breadcrumbbar.setTheme(theme);
     // NOTE: root path is set from loadTree() once nodePath/rootDir are known — calling it here
     // would pass null (setNodePath() hasn't run yet) and blow up in BreadcrumbBar.splitPath().
@@ -635,70 +638,48 @@ public class FileTreeView extends LinearLayout {
 
     File projectRoot = new File(rootTreeNode.getId());
     File gradleRoot = resolveGradleRoot(projectRoot);
-    boolean isGradleProject =
-        firstExisting(gradleRoot, "settings.gradle.kts", "settings.gradle") != null;
-    if (!isGradleProject) {
-      return;
-    }
+    int myToken = ++androidModApplyToken;
 
-    // Module discovery below walks the filesystem directly with java.io.File — same as the
-    // Gradle-script lookup already did — so, unlike before, it no longer needs root's real
-    // (lazily-loaded) children to exist first. That whole "wait for the real children to arrive,
-    // then apply" dance is gone; buildAndroidModContent() below builds the whole replacement
-    // subtree up front and swaps it in.
-    buildAndroidModContent(gradleRoot);
+    // Everything discoverAndroidModTree/restructureModuleNode/buildResGroup do below is
+    // java.io.File I/O plus building freestanding TreeNode objects that aren't attached to the
+    // live tree yet — none of it touches a View or the tree model, so none of it needs the main
+    // thread. On a project with a lot of modules/res files this walk can take a noticeable moment;
+    // doing it inline on the main thread would jank the UI (worse on slower devices/storage). Only
+    // the final swap-in at the bottom runs back on the main thread.
+    androidModExecutor.execute(
+        () -> {
+          boolean isGradleProject =
+              firstExisting(gradleRoot, "settings.gradle.kts", "settings.gradle") != null;
+          if (!isGradleProject) return;
+
+          List<TreeNode> scripts = new ArrayList<>();
+          String gradleRootPath = gradleRoot.getAbsolutePath();
+          addGradleFileIfExists(scripts, gradleRootPath, "settings.gradle.kts", "settings.gradle", "(Project: Settings)");
+          addGradleFileIfExists(scripts, gradleRootPath, "build.gradle.kts", "build.gradle", "(Project: Build)");
+          addGradleFileIfExists(scripts, gradleRootPath, "gradle.properties", null, "(Project: Properties)");
+          addGradleFileIfExists(scripts, gradleRootPath, "proguard-rules.pro", null, "(Project: proguard-rules)");
+          addGradleFileIfExists(scripts, gradleRootPath, "local.properties", null, "(SDK Location)");
+
+          List<TreeNode> modules = new ArrayList<>();
+          discoverAndroidModTree(gradleRoot, modules, scripts, new HashMap<>());
+
+          post(() -> applyAndroidModResult(myToken, modules, scripts));
+        });
   }
 
   /**
-   * A Flutter project keeps its Gradle/Android module inside an {@code android/} subfolder
-   * instead of at the project root — {@code settings.gradle}/{@code build.gradle} live in {@code
-   * android/}, not next to {@code pubspec.yaml}, and the rest of the tree ({@code lib/}, {@code
-   * ios/}, {@code test/}, ...) is Dart source with nothing Gradle-related in it. Detected by
-   * {@code pubspec.yaml} at the root plus an {@code android/} folder that is itself a Gradle
-   * project; anything else is treated as a normal (non-Flutter) Android project rooted at {@code
-   * projectRoot} directly. Discovery in {@link #buildAndroidModContent} starts from whatever this
-   * returns, so for a Flutter project {@code lib/ios/test/pubspec.yaml} are never even visited —
-   * not filtered out after the fact, just never walked into.
-   */
-  @NonNull
-  private File resolveGradleRoot(@NonNull File projectRoot) {
-    File androidDir = new File(projectRoot, "android");
-    boolean looksLikeFlutter =
-        new File(projectRoot, "pubspec.yaml").isFile() && androidDir.isDirectory();
-    if (looksLikeFlutter
-        && firstExisting(androidDir, "settings.gradle.kts", "settings.gradle") != null) {
-      return androidDir;
-    }
-    return projectRoot;
-  }
-
-  /**
-   * Replaces {@code rootTreeNode}'s children with exactly what Android Studio's "Android" project
-   * view shows: the flattened list of Gradle modules found anywhere under {@code gradleRoot}
-   * (however deep they're nested — a module 3 folders down still lands as a direct child, same as
-   * {@code :app} and {@code :feature:settings} both show as top-level entries in Android Studio)
-   * plus one "Gradle Scripts" group. Everything else — stray root files, non-module folders,
-   * folders that only exist to hold other folders, and (for a Flutter project) the whole
-   * lib/ios/test/pubspec.yaml side of the tree outside {@code android/} — is intentionally left
-   * out entirely, matching the reference project's {@code buildLocalTree}/{@code
-   * buildHierarchicalTreeLocal}. This is not a filtered file browser; it's a project-structure
-   * view.
+   * Swaps the discovered modules + Gradle Scripts group into the live tree. Runs on the main
+   * thread, called back from {@link #applyAndroidMod}'s background discovery.
    *
-   * @param gradleRoot where the Gradle project actually starts — the browsed root itself for a
-   *     plain Android project, or {@code root/android} for a Flutter one (see {@link
-   *     #resolveGradleRoot})
+   * @param token must still match {@link #androidModApplyToken} — otherwise a newer {@link
+   *     #applyAndroidMod}/{@link #removeAndroidMod} call (rapid re-toggle, or the user navigating
+   *     to a different root before this one finished) has since superseded this result, and
+   *     applying it now would either fight with that newer state or land on a tree that's already
+   *     been torn down.
    */
-  private void buildAndroidModContent(@NonNull File gradleRoot) {
-    List<TreeNode> scripts = new ArrayList<>();
-    String gradleRootPath = gradleRoot.getAbsolutePath();
-    addGradleFileIfExists(scripts, gradleRootPath, "settings.gradle.kts", "settings.gradle", "(Project: Settings)");
-    addGradleFileIfExists(scripts, gradleRootPath, "build.gradle.kts", "build.gradle", "(Project: Build)");
-    addGradleFileIfExists(scripts, gradleRootPath, "gradle.properties", null, "(Project: Properties)");
-    addGradleFileIfExists(scripts, gradleRootPath, "proguard-rules.pro", null, "(Project: proguard-rules)");
-    addGradleFileIfExists(scripts, gradleRootPath, "local.properties", null, "(SDK Location)");
-
-    List<TreeNode> modules = new ArrayList<>();
-    discoverAndroidModTree(gradleRoot, modules, scripts, new HashMap<>());
+  private void applyAndroidModResult(
+      int token, @NonNull List<TreeNode> modules, @NonNull List<TreeNode> scripts) {
+    if (token != androidModApplyToken || controller == null || rootTreeNode == null) return;
 
     // TreeNode.setChildren() is a raw structural mutation — safe only while the node isn't
     // currently expanded (no visible rows depend on its old children). Collapse first if needed,
@@ -713,6 +694,29 @@ public class FileTreeView extends LinearLayout {
       androidModGroup =
           addVirtualGroup("Gradle Scripts", R.drawable.ic_filetree_folder_gradle, scripts);
     }
+  }
+
+  /**
+   * A Flutter project keeps its Gradle/Android module inside an {@code android/} subfolder
+   * instead of at the project root — {@code settings.gradle}/{@code build.gradle} live in {@code
+   * android/}, not next to {@code pubspec.yaml}, and the rest of the tree ({@code lib/}, {@code
+   * ios/}, {@code test/}, ...) is Dart source with nothing Gradle-related in it. Detected by
+   * {@code pubspec.yaml} at the root plus an {@code android/} folder that is itself a Gradle
+   * project; anything else is treated as a normal (non-Flutter) Android project rooted at {@code
+   * projectRoot} directly. Discovery in {@link #applyAndroidMod} starts from whatever this
+   * returns, so for a Flutter project {@code lib/ios/test/pubspec.yaml} are never even visited —
+   * not filtered out after the fact, just never walked into.
+   */
+  @NonNull
+  private File resolveGradleRoot(@NonNull File projectRoot) {
+    File androidDir = new File(projectRoot, "android");
+    boolean looksLikeFlutter =
+        new File(projectRoot, "pubspec.yaml").isFile() && androidDir.isDirectory();
+    if (looksLikeFlutter
+        && firstExisting(androidDir, "settings.gradle.kts", "settings.gradle") != null) {
+      return androidDir;
+    }
+    return projectRoot;
   }
 
   /**
@@ -818,10 +822,9 @@ public class FileTreeView extends LinearLayout {
    * files, non-standard folders) is intentionally left out, same as the reference — this view is
    * meant to look exactly like Android Studio's, not like a raw file browser.
    *
-   * <p>Runs synchronously on the caller's thread (same as the rest of {@code buildAndroidModContent}).
-   * For modules with very large {@code res} trees this walks every qualifier folder up front, so if
-   * that ever shows up as jank on a huge project, move the call in {@link #buildAndroidModContent}
-   * onto a background thread and post the resulting node list back with {@link #post}.
+   * <p>Called from {@link #applyAndroidMod}'s background thread, along with the rest of module
+   * discovery — this is where most of that work's cost comes from on a module with a large {@code
+   * res} tree, since every qualifier folder gets walked up front.
    *
    * @param moduleNode the already-loaded module folder node (real, non-virtual)
    * @param moduleDir the same folder as a {@link File}
@@ -1004,10 +1007,11 @@ public class FileTreeView extends LinearLayout {
   }
 
   private void removeAndroidMod() {
+    androidModApplyToken++;
     androidModGroup = null;
     if (controller != null && rootTreeNode != null) {
       // Everything under rootTreeNode is synthetic while android mod is on (see
-      // buildAndroidModContent/discoverAndroidModTree) — there's no per-node badge/description to
+      // applyAndroidMod/discoverAndroidModTree) — there's no per-node badge/description to
       // undo individually anymore. Just drop the whole subtree and mark root as needing a fresh
       // lazy load, so the real on-disk structure comes back instead of the flattened module view.
       boolean wasExpanded = rootTreeNode.isExpanded();
@@ -1057,6 +1061,7 @@ public class FileTreeView extends LinearLayout {
     if (selectionPanel != null) selectionPanel.detach();
     fileWatcher.unwatchAll();
     searchExecutor.shutdownNow();
+    androidModExecutor.shutdownNow();
     if (controller != null) controller.destroy();
   }
 
