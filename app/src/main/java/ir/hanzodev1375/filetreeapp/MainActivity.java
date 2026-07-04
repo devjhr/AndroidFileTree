@@ -49,7 +49,8 @@ public class MainActivity extends AppCompatActivity {
     view.setZoomScale(50, 300);
     view.setIconArrow(R.drawable.ic_badge_error);
     view.setNodePath("/storage/emulated/0/");
-    view.setGitStatus("/storage/emulated/0/AndroidIDEProjects/Ghostide33", FilePayload.GIT_MODIFIED);
+    view.setGitStatus(
+        "/storage/emulated/0/AndroidIDEProjects/Ghostide33", FilePayload.GIT_MODIFIED);
     view.loadTree();
     int[] colors = {
       Color.parseColor("#FFD9FF00"),
