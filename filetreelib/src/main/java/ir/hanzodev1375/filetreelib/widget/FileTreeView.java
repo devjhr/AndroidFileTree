@@ -65,6 +65,10 @@ public class FileTreeView extends LinearLayout {
   private TreeNode lastOpenedFolder = null;
   private OnNodeCallBack click;
   private int pendingIconArrowRes = 0;
+  @Nullable private IconProvider pendingIconProvider = null;
+  private boolean pendingSelectionModeEnabled = true;
+  private boolean pendingDragEnabled = true;
+  private TreeAdapter.OnNodeLongClickListener pendingLongClickListener = null;
   private BreadcrumbBar breadcrumbbar;
   private TreeNode rootTreeNode;
   private boolean androidMod = false;
@@ -252,6 +256,7 @@ public class FileTreeView extends LinearLayout {
     breadcrumbbar.setRootPath(rootDir.getAbsolutePath());
 
     dragManager = new DragManager(controller);
+    dragManager.setDragLocked(!pendingDragEnabled);
     treeView.attachDragManager(dragManager);
 
     if (adapter != null) {
@@ -259,6 +264,11 @@ public class FileTreeView extends LinearLayout {
       if (pendingIconArrowRes != 0) {
         adapter.setIconArrow(pendingIconArrowRes);
       }
+      if (pendingIconProvider != null) {
+        adapter.setIconProvider(pendingIconProvider);
+      }
+      adapter.setSelectionModeEnabled(pendingSelectionModeEnabled);
+      adapter.setOnNodeLongClickListener(pendingLongClickListener);
       adapter.setOnNodeClickListener(
           (node, view) -> {
             breadcrumbbar.setSelectedNode(node, rootTreeNode);
@@ -496,8 +506,17 @@ public class FileTreeView extends LinearLayout {
         .show();
   }
 
+  /**
+   * Can be called before {@link #loadTree()} (e.g. right after constructing the view) — the
+   * provider is remembered and applied once {@code loadTree()} creates the adapter, same as
+   * {@link #setIconArrow}. Calling this before {@code loadTree()} used to throw a
+   * NullPointerException since the adapter didn't exist yet.
+   */
   public void setIconProvider(IconProvider ic) {
-    adapter.setIconProvider(ic);
+    this.pendingIconProvider = ic;
+    if (adapter != null) {
+      adapter.setIconProvider(ic);
+    }
   }
 
   /**
@@ -640,6 +659,14 @@ public class FileTreeView extends LinearLayout {
     File gradleRoot = resolveGradleRoot(projectRoot);
     int myToken = ++androidModApplyToken;
 
+    // Reuse the same inline loading spinner normally shown the first time a folder is expanded
+    // (TreeViewHolder's arrow ViewFlipper — see ExpandManager) — discovery below can take a
+    // moment on a project with a lot of modules/res files, so give the same "this is loading"
+    // feedback on root's row instead of it just looking frozen. Every exit path from the
+    // background task below (not a Gradle project, or discovery finished) clears this again.
+    rootTreeNode.setLazyLoadPending(true);
+    controller.getModel().notifyNodeChanged(rootTreeNode);
+
     // Everything discoverAndroidModTree/restructureModuleNode/buildResGroup do below is
     // java.io.File I/O plus building freestanding TreeNode objects that aren't attached to the
     // live tree yet — none of it touches a View or the tree model, so none of it needs the main
@@ -650,7 +677,10 @@ public class FileTreeView extends LinearLayout {
         () -> {
           boolean isGradleProject =
               firstExisting(gradleRoot, "settings.gradle.kts", "settings.gradle") != null;
-          if (!isGradleProject) return;
+          if (!isGradleProject) {
+            post(() -> clearAndroidModLoadingSpinner(myToken));
+            return;
+          }
 
           List<TreeNode> scripts = new ArrayList<>();
           String gradleRootPath = gradleRoot.getAbsolutePath();
@@ -668,6 +698,17 @@ public class FileTreeView extends LinearLayout {
   }
 
   /**
+   * Clears the loading spinner {@link #applyAndroidMod} turned on, for the path where the folder
+   * turned out not to be a Gradle project after all (so {@link #applyAndroidModResult} never
+   * runs). Guarded by {@code token} the same way {@link #applyAndroidModResult} is.
+   */
+  private void clearAndroidModLoadingSpinner(int token) {
+    if (token != androidModApplyToken || controller == null || rootTreeNode == null) return;
+    rootTreeNode.setLazyLoadPending(false);
+    controller.getModel().notifyNodeChanged(rootTreeNode);
+  }
+
+  /**
    * Swaps the discovered modules + Gradle Scripts group into the live tree. Runs on the main
    * thread, called back from {@link #applyAndroidMod}'s background discovery.
    *
@@ -681,6 +722,30 @@ public class FileTreeView extends LinearLayout {
       int token, @NonNull List<TreeNode> modules, @NonNull List<TreeNode> scripts) {
     if (token != androidModApplyToken || controller == null || rootTreeNode == null) return;
 
+    rootTreeNode.setLazyLoadPending(false);
+
+    // Build "Gradle Scripts" and fold it straight into the same children list as the modules,
+    // instead of setting the modules first and inserting this as a *separate* structural change
+    // afterward (that used to be addVirtualGroup()'s job here). Two back-to-back structural
+    // mutations — bulk setChildren() for the modules, then a second incremental insert for this
+    // group — was exactly what produced RecyclerView's "Inconsistency detected: invalid view
+    // holder adapter position" crash on projects with enough modules for the position math
+    // between the two steps to disagree. One mutation avoids that entirely.
+    if (!scripts.isEmpty()) {
+      TreeNode scriptsGroup =
+          new TreeNode.Builder("Gradle Scripts")
+              .setId(rootTreeNode.getId() + "::virtual::Gradle Scripts")
+              .setType(TreeNode.TYPE_VIRTUAL)
+              .setHasChildren(true)
+              .build();
+      scriptsGroup.setTag(R.drawable.ic_filetree_folder_gradle);
+      for (TreeNode script : scripts) scriptsGroup.addChild(script);
+      modules.add(0, scriptsGroup); // Android Studio shows "Gradle Scripts" above the modules
+      androidModGroup = scriptsGroup;
+    } else {
+      androidModGroup = null;
+    }
+
     // TreeNode.setChildren() is a raw structural mutation — safe only while the node isn't
     // currently expanded (no visible rows depend on its old children). Collapse first if needed,
     // swap the children, then re-expand through the controller so the adapter is notified properly
@@ -689,11 +754,6 @@ public class FileTreeView extends LinearLayout {
     if (wasExpanded) controller.collapseNode(rootTreeNode);
     rootTreeNode.setChildren(modules);
     controller.expandNode(rootTreeNode);
-
-    if (!scripts.isEmpty()) {
-      androidModGroup =
-          addVirtualGroup("Gradle Scripts", R.drawable.ic_filetree_folder_gradle, scripts);
-    }
   }
 
   /**
@@ -781,13 +841,18 @@ public class FileTreeView extends LinearLayout {
     return result;
   }
 
+  /**
+   * Folders never worth descending into while looking for more modules. {@code src} is the
+   * important one for multi-module projects: a module's own source tree can contain thousands of
+   * package folders, and none of them can ever be a real nested Gradle module (that's simply not
+   * where Gradle looks), so walking into it was pure wasted work — on a large multi-module
+   * project this was slow enough to look like a hang/crash. Anything starting with "." (
+   * {@code .git}, {@code .gradle}, {@code .idea}, {@code .kotlin}, {@code .cxx},
+   * {@code .androidpe}, IDE/tooling caches in general) is skipped the same way.
+   */
   private static boolean isAndroidModSkipDir(@NonNull String name) {
-    return name.equals("build")
-        || name.equals(".git")
-        || name.equals(".gradle")
-        || name.equals(".kotlin")
-        || name.equals(".idea")
-        || name.equals(".androidpe");
+    if (name.startsWith(".")) return true;
+    return name.equals("build") || name.equals("src");
   }
 
   /** Builds one flattened module node — badge/description set on it directly, then restructured. */
@@ -884,15 +949,15 @@ public class FileTreeView extends LinearLayout {
     File[] resFolders = resDir.listFiles(File::isDirectory);
     if (resFolders == null) return;
 
-    // "drawable" is intentionally NOT merged by filename here — a project's drawables are
-    // spread across many densities/states/night-mode variants with mostly-distinct names, so
-    // merging would mostly just add an extra layer over browsing the qualifier folders directly.
-    // "layout"/"values" almost always benefit from the merge (a handful of well-known files
-    // shared across a couple of qualifiers). "mipmap" is merged only for launcher-icon names
-    // (see isLauncherIconName) — that's the one thing actually meant to live there; anything
+    // "drawable" and "layout" are intentionally NOT merged by filename — both spread across many
+    // qualifiers/states with mostly-distinct names, so merging would mostly just add an extra
+    // layer over browsing the qualifier folders directly. "values" almost always benefits from
+    // the merge (a handful of well-known files — colors.xml, strings.xml, themes.xml — shared
+    // across a couple of qualifiers like values-night). "mipmap" is merged only for launcher-icon
+    // names (see isLauncherIconName) — that's the one thing actually meant to live there; anything
     // else a project drops in mipmap (rare) is shown ungrouped instead of forcing it into the
     // same by-name merge.
-    Set<String> virtualTypes = new HashSet<>(Arrays.asList("layout", "mipmap", "values"));
+    Set<String> virtualTypes = new HashSet<>(Arrays.asList("mipmap", "values"));
     Map<String, List<File>> grouped = new LinkedHashMap<>();
     for (File f : resFolders) {
       String name = f.getName();
@@ -1196,6 +1261,53 @@ public class FileTreeView extends LinearLayout {
     if (adapter != null) {
       adapter.setIconArrow(icon);
     }
+  }
+
+  /**
+   * Enables or disables the built-in "long-press enters selection mode, shows the selection
+   * action panel" behavior. Default {@code true}. Set to {@code false} to handle
+   * selection/multi-select entirely yourself — combine with {@link #setOnNodeLongClickListener}
+   * to show your own dialog/UI on long-press instead.
+   */
+  public void setSelectionModeEnabled(boolean enabled) {
+    this.pendingSelectionModeEnabled = enabled;
+    if (adapter != null) {
+      adapter.setSelectionModeEnabled(enabled);
+    }
+  }
+
+  public boolean isSelectionModeEnabled() {
+    return adapter != null ? adapter.isSelectionModeEnabled() : pendingSelectionModeEnabled;
+  }
+
+  /**
+   * Consulted on every long-press before the built-in selection-mode behavior runs. Return {@code
+   * true} to say you've fully handled the long-press (your own dialog, custom action, etc.) — the
+   * built-in selection mode is skipped for that press. Return {@code false}, or don't set a
+   * listener at all, to fall through to the built-in behavior (or to do nothing, if {@link
+   * #setSelectionModeEnabled} is {@code false}).
+   */
+  public void setOnNodeLongClickListener(@Nullable TreeAdapter.OnNodeLongClickListener listener) {
+    this.pendingLongClickListener = listener;
+    if (adapter != null) {
+      adapter.setOnNodeLongClickListener(listener);
+    }
+  }
+
+  /**
+   * Enables or disables drag-to-move. Default {@code true}. Virtual grouping nodes (e.g. "Gradle
+   * Scripts", "res" in {@link #setAndroidMod}'s project view) can never be dragged regardless of
+   * this setting, since they have no real file to move — this only affects real files/folders.
+   */
+  public void setDragEnabled(boolean enabled) {
+    this.pendingDragEnabled = enabled;
+    if (dragManager != null) {
+      dragManager.setDragLocked(!enabled);
+    }
+  }
+
+  public boolean isDragEnabled() {
+    return dragManager == null || !dragManager.isDragLocked();
   }
 
   public boolean getShowSearchBar() {
