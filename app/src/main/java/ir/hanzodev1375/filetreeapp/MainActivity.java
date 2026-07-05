@@ -127,6 +127,8 @@ public class MainActivity extends AppCompatActivity {
     // --- Node path + load (Normal View is the initial state; the two buttons switch this) ---
     view.setNodePath(NORMAL_VIEW_ROOT);
     view.loadTree();
+    
+    view.setAutoExpandSingleChildChains(true);
 
     // --- Tap handling ---
     view.setClickNode(

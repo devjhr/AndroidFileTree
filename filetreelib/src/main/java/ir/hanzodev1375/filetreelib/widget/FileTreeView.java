@@ -32,6 +32,7 @@ import ir.hanzodev1375.filetreelib.search.TreeFilter;
 import java.util.ArrayList;
 import java.util.List;
 import ir.hanzodev1375.filetreelib.core.AndroidModTreeBuilder;
+import ir.hanzodev1375.filetreelib.core.ExpandManager;
 import ir.hanzodev1375.filetreelib.model.SearchResult;
 import ir.hanzodev1375.filetreelib.core.TreeNode;
 import java.io.File;
@@ -69,6 +70,7 @@ public class FileTreeView extends LinearLayout {
   private boolean androidMod = false;
   private TreeNode androidModGroup = null;
   private DragManager dragManager;
+  private boolean autoExpandSingleChildChains = false;
   private ExecutorService androidModExecutor;
   private int androidModApplyToken = 0;
   public FileTreeView(Context context) {
@@ -242,6 +244,33 @@ public class FileTreeView extends LinearLayout {
 
     controller =
         new TreeController.Builder(provider).model(model).cache(new TreeCache(512)).build();
+
+    // Auto-descend a chain of single-child folders — e.g. Android Studio's "compact middle
+    // packages": expanding a folder that turns out to contain exactly one item keeps expanding
+    // that item too, and so on, stopping the moment a folder has 2+ items (or the chain ends at a
+    // file). Works the same whether the children just arrived from a real lazy disk load or were
+    // already sitting there from android-mod's synthetic tree — both paths fire the same
+    // onNodesExpanded callback once a node's children become visible, so one listener covers both
+    // modes without needing to know which one is active.
+    controller
+        .getExpandManager()
+        .addExpandListener(
+            new ExpandManager.ExpandListener() {
+              @Override
+              public void onNodesExpanded(
+                  @NonNull TreeNode parent, @NonNull List<TreeNode> inserted, int insertPos) {
+                if (!autoExpandSingleChildChains) return;
+                if (parent.getChildCount() != 1) return;
+                TreeNode onlyChild = parent.getChildren().get(0);
+                if (onlyChild.isFolder() || onlyChild.isVirtual()) {
+                  controller.expandNode(onlyChild);
+                }
+              }
+
+              @Override
+              public void onNodesCollapsed(
+                  @NonNull TreeNode parent, @NonNull List<TreeNode> removed, int removePos) {}
+            });
 
     treeView.setup(controller, theme);
     adapter = treeView.getTreeAdapter();
@@ -916,6 +945,110 @@ public class FileTreeView extends LinearLayout {
 
   public boolean isDragEnabled() {
     return dragManager == null || !dragManager.isDragLocked();
+  }
+
+  /**
+   * When {@code enabled}, expanding a folder that turns out to contain exactly one item
+   * auto-expands that item too, and so on down the chain — stopping the moment a folder has 2+
+   * items, or the chain ends at a file. The same "Android Studio compact middle packages" feel,
+   * for any folder shape, not just Java/Kotlin packages. Default {@code false}. Applies equally
+   * whether {@link #setAndroidMod} is on or off — both real lazy-loaded folders and android-mod's
+   * synthetic tree go through the same expand path this hooks into.
+   */
+  public void setAutoExpandSingleChildChains(boolean enabled) {
+    this.autoExpandSingleChildChains = enabled;
+  }
+
+  public boolean isAutoExpandSingleChildChains() {
+    return autoExpandSingleChildChains;
+  }
+
+  /**
+   * Expands every ancestor folder of {@code targetPath} (loading each one from disk first if
+   * needed) and reveals/scrolls to it once found — e.g. jumping straight to a file deep in the
+   * tree without the user manually tapping through each folder in between.
+   *
+   * @param targetPath absolute path of the file/folder to reveal
+   * @return {@code false} immediately, without touching the tree, if {@code targetPath} doesn't
+   *     exist on disk or isn't under the tree's current root ({@link #getNodePath()}); {@code
+   *     true} otherwise, meaning an expansion attempt was made. A {@code true} return doesn't
+   *     guarantee the target ends up fully revealed though — if a folder along the way turns out
+   *     not to actually contain the next segment (e.g. it changed on disk after the initial
+   *     existence check), this still expands as far as it successfully got and stops there rather
+   *     than throwing.
+   *     <p>Works the same in android-mod's flattened project view: a module's children were
+   *     already built synthetically, so no disk load is needed for those — this just walks the
+   *     already-present children instead of lazy-loading them.
+   */
+  public boolean expandToPath(@NonNull String targetPath) {
+    if (controller == null || rootTreeNode == null) return false;
+
+    File root = new File(rootTreeNode.getId());
+    File target = new File(targetPath);
+    if (!target.exists()) return false; // nothing there to expand to — don't bother lazy-loading
+
+    List<String> segments = new ArrayList<>();
+    File cur = target;
+    while (cur != null && !cur.getAbsolutePath().equals(root.getAbsolutePath())) {
+      segments.add(0, cur.getName());
+      cur = cur.getParentFile();
+    }
+    if (cur == null) return false; // targetPath isn't under the current root at all
+
+    expandToPathSegment(rootTreeNode, segments, 0);
+    return true;
+  }
+
+  private void expandToPathSegment(
+      @NonNull TreeNode current, @NonNull List<String> segments, int index) {
+    if (index >= segments.size()) {
+      controller.revealNode(current);
+      return;
+    }
+
+    String nextName = segments.get(index);
+    Runnable proceed =
+        () -> {
+          TreeNode match = null;
+          for (TreeNode child : current.getChildren()) {
+            if (child.getName().equals(nextName)) {
+              match = child;
+              break;
+            }
+          }
+          if (match == null) {
+            // Segment not found (path doesn't exist, or this folder's contents don't match what
+            // was asked for) — reveal as far as we successfully got instead of doing nothing.
+            controller.revealNode(current);
+            return;
+          }
+          expandToPathSegment(match, segments, index + 1);
+        };
+
+    if (current.getChildCount() > 0 || !current.hasChildren()) {
+      // Already loaded (real folder previously expanded, or android-mod's synthetic children),
+      // or known to have nothing in it — no disk load needed, continue immediately.
+      proceed.run();
+    } else {
+      // Real folder, not yet lazily loaded — expand it and continue once its children arrive.
+      controller
+          .getExpandManager()
+          .addExpandListener(
+              new ExpandManager.ExpandListener() {
+                @Override
+                public void onNodesExpanded(
+                    @NonNull TreeNode parent, @NonNull List<TreeNode> inserted, int insertPos) {
+                  if (parent != current) return;
+                  controller.getExpandManager().removeExpandListener(this);
+                  proceed.run();
+                }
+
+                @Override
+                public void onNodesCollapsed(
+                    @NonNull TreeNode parent, @NonNull List<TreeNode> removed, int removePos) {}
+              });
+      controller.expandNode(current);
+    }
   }
 
   public boolean getShowSearchBar() {
