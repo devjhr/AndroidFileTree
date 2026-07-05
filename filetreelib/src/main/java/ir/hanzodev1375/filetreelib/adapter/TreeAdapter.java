@@ -83,12 +83,15 @@ public final class TreeAdapter extends RecyclerView.Adapter<TreeViewHolder> {
   // so RecyclerView always computes each affected sibling's position from an actually
   // correct, current layout — this is what avoids position-drift/overlap.
   //
+  // Applied to every expand regardless of child count, so a folder with 2 children
+  // reveals the same way as a folder with 200 — no separate "small folder" fast path
+  // that pops everything in at once anymore.
+  //
   // NOTE: this is a SEPARATE knob from app:tv_animateDuration / TreeAnimator's
   // expandDuration. expandDuration controls how long *one row's* fade/scale animation
   // takes; staggerStepDelay controls how quickly consecutive rows *start* appearing.
   // Changing one does not change the other.
-  private static final int STAGGER_THRESHOLD = 4;
-  private long staggerStepDelay = 4L;
+  private long staggerStepDelay = 0L;
 
   public void setStaggerStepDelay(long ms) {
     this.staggerStepDelay = Math.max(0L, ms);
@@ -120,13 +123,7 @@ public final class TreeAdapter extends RecyclerView.Adapter<TreeViewHolder> {
 
             int parentPos = currentList.indexOf(parent);
             if (parentPos >= 0 && insertPos == parentPos + 1 && !inserted.isEmpty()) {
-                if (inserted.size() > STAGGER_THRESHOLD) {
-                    staggerInsert(parent, inserted, insertPos, parentPos);
-                } else {
-                    currentList.addAll(insertPos, inserted);
-                    notifyItemRangeInserted(insertPos, inserted.size());
-                    notifyItemChanged(parentPos, Boolean.TRUE);
-                }
+                staggerInsert(parent, inserted, insertPos, parentPos);
             } else {
                 submitNewList(visibleList.snapshot());
                 if (parentPos >= 0) {
