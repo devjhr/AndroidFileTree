@@ -12,6 +12,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.GravityCompat;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.sidesheet.SideSheetDialog;
 import ir.hanzodev1375.filetreeapp.databinding.ActivityMainBinding;
 import ir.hanzodev1375.filetreelib.core.TreeNode;
 import ir.hanzodev1375.filetreelib.model.FilePayload;
@@ -54,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
           drawerFileTreeView.setAndroidMod(true);
           binding.drawerLayout.openDrawer(GravityCompat.START);
         });
-//    binding.btnPopupWindow.setOnClickListener(v -> buildinPopWindows());
+    //    binding.btnPopupWindow.setOnClickListener(v -> buildinPopWindows());
     binding.launchSampleExplorer.setOnClickListener(
         v -> startActivity(new Intent(getApplicationContext(), SampleExplorerActivity.class)));
 
@@ -95,15 +97,13 @@ public class MainActivity extends AppCompatActivity {
 
     // --- Row appearance ---
     view.setIconArrow(R.drawable.ic_badge_error);
-<<<<<<< HEAD
+
     view.setNodePath("/storage/emulated/0/");
     view.setGitStatus(
         "/storage/emulated/0/AndroidIDEProjects/Ghostide33", FilePayload.GIT_MODIFIED);
     view.loadTree();
-    int[] colors = {
-=======
+
     int[] rainbowColors = {
->>>>>>> branch 'main' of https://github.com/HanzoDev1375/AndroidFileTree.git
       Color.parseColor("#FFD9FF00"),
       Color.parseColor("#FF80FF00"),
       Color.parseColor("#FF00B7FF"),
@@ -132,7 +132,8 @@ public class MainActivity extends AppCompatActivity {
 
     // --- Tap handling ---
     view.setClickNode(
-        (node, views) -> Toast.makeText(getApplication(), node.getAbsolutePath(), Toast.LENGTH_LONG).show());
+        (node, views) ->
+            Toast.makeText(getApplication(), node.getAbsolutePath(), Toast.LENGTH_LONG).show());
 
     // --- Opting out of the built-in long-press selection panel ---
     // setSelectionModeEnabled(false) turns off the automatic "long-press enters selection mode"
@@ -146,7 +147,8 @@ public class MainActivity extends AppCompatActivity {
               .setMessage(node.getAbsolutePath())
               .setPositiveButton("Close", null)
               .show();
-          return true; // handled — the (disabled) built-in selection mode would never have run anyway
+          return true; // handled — the (disabled) built-in selection mode would never have run
+          // anyway
         });
     Log.d(TAG, "selectionModeEnabled=" + view.isSelectionModeEnabled());
 
@@ -183,7 +185,6 @@ public class MainActivity extends AppCompatActivity {
     binding = null;
   }
 
-<<<<<<< HEAD
   public void showFileTreeBottomSheet() {
     var dialog = new BottomSheetDialog(this);
     var view = new FileTreeView(this);
@@ -221,13 +222,12 @@ public class MainActivity extends AppCompatActivity {
     sideSheet.show();
   }
 
-=======
   /**
-   * Popup window — demonstrates {@link FileTreeView#addVirtualGroup}, grouping a handful of
-   * real files from elsewhere on disk under one synthetic "Gradle Scripts"-style folder.
+   * Popup window — demonstrates {@link FileTreeView#addVirtualGroup}, grouping a handful of real
+   * files from elsewhere on disk under one synthetic "Gradle Scripts"-style folder.
    */
-   /*
->>>>>>> branch 'main' of https://github.com/HanzoDev1375/AndroidFileTree.git
+  /*
+
   void buildinPopWindows() {
     var windows = new PopupWindow(binding.btnPopupWindow);
     windows.setWidth(ViewGroup.LayoutParams.WRAP_CONTENT);
