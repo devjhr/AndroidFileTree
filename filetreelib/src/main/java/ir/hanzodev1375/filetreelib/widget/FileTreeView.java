@@ -913,10 +913,10 @@ public class FileTreeView extends LinearLayout {
     if (kotlinDir.isDirectory()) children.add(realFolderNode(kotlinDir));
 
     File generatedJava = new File(moduleDir, "build/generated/source");
-    if (generatedJava.isDirectory()) children.add(realFolderNode(generatedJava));
+    if (generatedJava.isDirectory()) children.add(realFolderNode(generatedJava, "Generated"));
 
     File generatedRes = new File(moduleDir, "build/generated/res");
-    if (generatedRes.isDirectory()) children.add(realFolderNode(generatedRes));
+    if (generatedRes.isDirectory()) children.add(realFolderNode(generatedRes, "Generated"));
 
     File resDir = new File(moduleDir, "src/main/res");
     if (resDir.isDirectory()) {
@@ -1043,12 +1043,25 @@ public class FileTreeView extends LinearLayout {
   /** Real, still-lazily-loadable folder node pointing at {@code dir} (expand triggers the normal provider). */
   @NonNull
   private TreeNode realFolderNode(@NonNull File dir) {
+    return realFolderNode(dir, null);
+  }
+
+  /**
+   * Same as {@link #realFolderNode(File)}, with a description shown next to the folder name —
+   * used to mark {@code build/generated/source} and {@code build/generated/res} as generated,
+   * the same way Android Studio's own "Android" project view labels them, distinct from the
+   * hand-written {@code java}/{@code kotlin}/{@code res} source roots.
+   */
+  @NonNull
+  private TreeNode realFolderNode(@NonNull File dir, @Nullable String description) {
     String[] entries = dir.list();
+    FilePayload.Builder pb = new FilePayload.Builder(dir.getAbsolutePath(), true);
+    if (description != null) pb.description(description);
     return new TreeNode.Builder(dir.getName())
         .setId(dir.getAbsolutePath())
         .setType(TreeNode.TYPE_FOLDER)
         .setHasChildren(entries != null && entries.length > 0)
-        .setPayload(new FilePayload.Builder(dir.getAbsolutePath(), true).build())
+        .setPayload(pb.build())
         .build();
   }
 
