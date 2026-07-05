@@ -34,6 +34,9 @@ A production-ready Android TreeView library for building modern file explorers s
 - Tree state persistence
 - Clipboard manager
 - Node cache
+- Android Studio-style project view (Gradle module detection, Flutter support)
+- Expand-to-path with highlight
+- Auto-expand single-child chains
 - Fully customizable
 - AndroidX compatible
 - Java 8+
@@ -81,9 +84,13 @@ var view = new FileTreeView(this);
     view.loadTree();
 
 ```
-### note not call back to on click in 1.1.1 soon adding 
+Tap handling
 
-call `FileTreeView#getAdapter()` to onClick
+```java
+view.setClickNode((node, itemView) -> {
+    // called for files; folders/virtual groups toggle expand/collapse automatically
+});
+```
 
 custom IconProvider
 ```java
@@ -114,6 +121,123 @@ FileTreeView#setZoomMod(true);
 FileTreeView#setZoomScale(50,300);
 
 ```
+
+Reset zoom / read current scale
+
+```java
+view.resetZoom();                 // back to 100%, doesn't change whether pinch-zoom is enabled
+int[] range = view.getZoomScale();       // [min, max]
+int current = view.getCurrentZoomScale();
+view.setCurrentZoomScale(150);           // jump straight to 150%
+```
+
+---
+
+# Android Studio-style Project View
+
+Flattens the tree into what Android Studio's own "Android" project view shows: every Gradle
+module (however deeply nested — `:app`, `:feature:settings`, all flattened to the same level),
+each one badged and labeled by type (Android Application/Library, Java Library, Kotlin), with a
+"Gradle Scripts" group at the top and, inside each module, `manifests`/`java`/`kotlin`/`res`/
+`assets` instead of the raw folder layout. Everything else (non-module folders, stray root files)
+is hidden — this is a project-structure view, not a filtered file browser.
+
+```java
+view.setAndroidMod(true);
+view.isAndroidMod(); // true
+```
+
+Works the same for Flutter projects — detected automatically (a `pubspec.yaml` at the root plus
+an `android/` folder that's itself a Gradle project) and the view is built from `android/` instead
+of the project root, so `lib/`, `ios/`, `test/` are never shown.
+
+Discovery runs on a background thread; the existing folder-loading spinner shows on the root row
+while it's working. Turning the mode off (`setAndroidMod(false)`) restores the real on-disk
+structure.
+
+Virtual grouping nodes ("Gradle Scripts", "res", per-file-name groups) can never be renamed,
+deleted, or dragged — they have no single real file to act on. Real files/folders shown inside the
+view (module folders, `java`, individual resources) behave exactly as anywhere else in the tree.
+
+---
+
+# Selection Mode / Long-Press
+
+Long-press enters the built-in multi-select mode and shows the selection action panel by default.
+To handle long-press yourself instead (a custom dialog, menu, etc.) with no built-in panel at all:
+
+```java
+view.setSelectionModeEnabled(false);
+view.setOnNodeLongClickListener((node, itemView) -> {
+    // show your own UI here
+    return true; // consumed
+});
+```
+
+Returning `false` (or not setting a listener) falls through to the built-in behavior if
+`setSelectionModeEnabled` is still `true`.
+
+---
+
+# Drag Enable / Disable
+
+```java
+view.setDragEnabled(false); // real files/folders become undraggable
+view.isDragEnabled();
+```
+
+Virtual grouping nodes (see Android Studio-style Project View above) are always undraggable
+regardless of this setting.
+
+---
+
+# Expand To Path / Highlight
+
+Jump straight to a file/folder deep in the tree — expands every ancestor folder (lazy-loading
+each one from disk if needed) and scrolls to it, without the user tapping through each level:
+
+```java
+view.expandToPath("/storage/emulated/0/Project/app/src/main/java/com/example/Main.java");
+```
+
+Returns `false` immediately (no-op) if the path doesn't exist or isn't under the tree's current
+root. Pass `true` as a second argument to also highlight the row once found — useful when several
+files share a name and you want to show the user exactly which one this is (e.g. an open editor
+tab's location):
+
+```java
+view.expandToPath(path, true);
+```
+
+Only one node is highlighted at a time; tapping any node in the tree clears it automatically, or
+clear it manually:
+
+```java
+view.clearHighlight();
+```
+
+The highlight color reuses the theme's search-match highlight color, so a custom theme is
+followed automatically:
+
+```java
+view.getTheme().setSearchHighlightColor(Color.parseColor("#FFEB3B"));
+```
+
+---
+
+# Auto-Expand Single-Child Chains
+
+Android Studio's "compact middle packages" behavior, for any folder shape: expanding a folder
+that turns out to contain exactly one item auto-expands that item too, and so on down the chain,
+stopping the moment a folder has 2+ items (or the chain ends at a file).
+
+```java
+view.setAutoExpandSingleChildChains(true);
+view.isAutoExpandSingleChildChains();
+```
+
+Works the same whether Android Studio-style Project View is on or off.
+
 ---
 
 # Permissions

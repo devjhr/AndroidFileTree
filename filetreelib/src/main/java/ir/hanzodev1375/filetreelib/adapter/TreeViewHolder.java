@@ -162,7 +162,16 @@ public final class TreeViewHolder extends RecyclerView.ViewHolder {
     }
 
     itemRoot.setAlpha(isCut ? 0.4f : 1f);
-    itemRoot.setBackgroundColor(node.isSelected() ? theme.getSelectedBg() : Color.TRANSPARENT);
+    if (node.isSelected()) {
+      itemRoot.setBackgroundColor(theme.getSelectedBg());
+    } else if (node.isHighlighted()) {
+      // Reused from the search-match highlight color (see FileTreeView#expandToPath) rather than
+      // a separate attribute — same "this text is customizable via the theme" contract, just
+      // applied to the whole row instead of a substring span.
+      itemRoot.setBackgroundColor(theme.getSearchHighlightColor());
+    } else {
+      itemRoot.setBackgroundColor(Color.TRANSPARENT);
+    }
 
     if (payload != null && payload.getBadge() != null) {
       tvBadge.setText(payload.getBadge());

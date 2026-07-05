@@ -143,6 +143,7 @@ public final class TreeAdapter extends RecyclerView.Adapter<TreeViewHolder> {
                     && removePos + removed.size() <= currentList.size();
 
             if (canFastPath) {
+                diffRequestId++;
                 for (int i = 0; i < removed.size(); i++) {
                     currentList.remove(removePos);
                 }
@@ -207,6 +208,15 @@ public final class TreeAdapter extends RecyclerView.Adapter<TreeViewHolder> {
                                int insertPos, int parentPos) {
         int totalSize = inserted.size();
 
+        // Bump diffRequestId here too, not just in submitNewList(): this directly mutates
+        // currentList outside of the diff pipeline. If a submitNewList() diff is currently being
+        // computed on the background executor against an oldList snapshot taken before this
+        // insert, its eventual mainHandler.post callback must NOT blindly overwrite currentList
+        // with its own (now stale) newList — that would silently drop this insert while also
+        // replaying dispatchUpdatesTo() against a RecyclerView state it no longer matches,
+        // producing duplicate/ghost rows. Bumping the counter makes that callback detect it's
+        // stale and re-diff from the current state instead of applying itself.
+        diffRequestId++;
         currentList.add(insertPos, inserted.get(0));
         notifyItemRangeInserted(insertPos, 1);
         notifyItemChanged(parentPos, Boolean.TRUE);
@@ -221,6 +231,7 @@ public final class TreeAdapter extends RecyclerView.Adapter<TreeViewHolder> {
             public void run() {
                 if (!pendingStaggerJobs.containsKey(parentId)) return;
 
+                diffRequestId++;
                 int pos = insertPos + nextIndex[0];
                 currentList.add(pos, inserted.get(nextIndex[0]));
                 notifyItemRangeInserted(pos, 1);
@@ -382,6 +393,12 @@ public final class TreeAdapter extends RecyclerView.Adapter<TreeViewHolder> {
     }
 
     public void submitNewList(@NonNull final List<TreeNode> newList) {
+        // Must happen before snapshotting oldList, not after the diff comes back: a stagger job
+        // still running while the diff is computed on a background thread would keep mutating
+        // currentList via its own notifyItemRangeInserted calls, so by the time the diff result
+        // (computed against a now-stale snapshot) gets applied, its position math no longer
+        // matches the real list — RecyclerView's "Invalid item position" inconsistency crash.
+        cancelAllPendingStaggers();
         final List<TreeNode> oldList = new ArrayList<>(currentList);
         final int requestId = ++diffRequestId;
         diffExecutor.submit(() -> {
@@ -389,8 +406,15 @@ public final class TreeAdapter extends RecyclerView.Adapter<TreeViewHolder> {
                     new TreeDiffCallback(oldList, newList), true
             );
             mainHandler.post(() -> {
-                if (requestId != diffRequestId) return;
-                cancelAllPendingStaggers();
+                if (requestId != diffRequestId) {
+                    // currentList was mutated directly (staggerInsert / fast-path collapse
+                    // removal) while this diff was being computed against a now-stale oldList.
+                    // Applying it here would replay position math for a currentList shape that
+                    // no longer matches what RecyclerView actually has — re-diff from scratch
+                    // against the current visibleList instead of dropping the update entirely.
+                    submitNewList(visibleList.snapshot());
+                    return;
+                }
                 currentList = new ArrayList<>(newList);
                 result.dispatchUpdatesTo(this);
             });

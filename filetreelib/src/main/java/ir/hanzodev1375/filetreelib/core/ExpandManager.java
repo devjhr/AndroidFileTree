@@ -470,7 +470,12 @@ public final class ExpandManager {
             @NonNull TreeNode parent,
             @NonNull List<TreeNode> insertedNodes,
             int insertPosition) {
-        for (ExpandListener listener : listeners) {
+        // Iterate a snapshot, not the live list: a listener (e.g. FileTreeView's one-shot
+        // expandToPath listener) may add/remove listeners on `listeners` from inside this very
+        // callback. Iterating the live ArrayList in that case risks ConcurrentModificationException
+        // whenever a removal isn't immediately offset by an addition (e.g. path segment not found,
+        // or the next node's children came from cache and were attached synchronously).
+        for (ExpandListener listener : new ArrayList<>(listeners)) {
             listener.onNodesExpanded(parent, insertedNodes, insertPosition);
         }
     }
@@ -479,13 +484,13 @@ public final class ExpandManager {
             @NonNull TreeNode parent,
             @NonNull List<TreeNode> removedNodes,
             int removePosition) {
-        for (ExpandListener listener : listeners) {
+        for (ExpandListener listener : new ArrayList<>(listeners)) {
             listener.onNodesCollapsed(parent, removedNodes, removePosition);
         }
     }
 
     private void notifyLazyLoadStateChanged(@NonNull TreeNode node) {
-        for (ExpandListener listener : listeners) {
+        for (ExpandListener listener : new ArrayList<>(listeners)) {
             listener.onLazyLoadStateChanged(node);
         }
     }

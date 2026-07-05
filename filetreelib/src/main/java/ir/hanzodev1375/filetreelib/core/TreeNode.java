@@ -94,6 +94,9 @@ public class TreeNode {
   /** Whether this node is part of the current selection set. */
   private boolean selected;
 
+  /** Whether this node is currently highlighted (see {@link #isHighlighted()}). */
+  private boolean highlighted;
+
   /** Whether the user has bookmarked this node. */
   private boolean bookmarked;
 
@@ -448,6 +451,21 @@ public class TreeNode {
   /** Updates the selection flag. */
   public void setSelected(boolean selected) {
     this.selected = selected;
+  }
+
+  /**
+   * Returns {@code true} if this node is currently highlighted — e.g. after {@code
+   * FileTreeView#expandToPath(String, boolean)} reveals it, to show the user exactly which row
+   * (out of possibly several same-named ones) it landed on. Purely a transient render flag, like
+   * {@link #isSelected()} — not persisted, not tied to the file itself.
+   */
+  public boolean isHighlighted() {
+    return highlighted;
+  }
+
+  /** Updates the highlight flag. */
+  public void setHighlighted(boolean highlighted) {
+    this.highlighted = highlighted;
   }
 
   /** Returns {@code true} if the user has bookmarked this node. */

@@ -7,6 +7,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.PopupWindow;
 import android.widget.Toast;
 import androidx.appcompat.app.ActionBarDrawerToggle;
@@ -57,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
     //    binding.btnPopupWindow.setOnClickListener(v -> buildinPopWindows());
     binding.launchSampleExplorer.setOnClickListener(
         v -> startActivity(new Intent(getApplicationContext(), SampleExplorerActivity.class)));
+    binding.btnExpandToPath.setOnClickListener(v -> showExpandToPathDialog());
 
     ActionBarDrawerToggle toggle =
         new ActionBarDrawerToggle(
@@ -68,8 +70,9 @@ public class MainActivity extends AppCompatActivity {
   /**
    * Left-drawer FileTreeView — the main demo surface. Set up once here with everyday API calls
    * (zoom, theming, click/long-click handling, the selection-mode/drag opt-outs, search bar);
-   * {@link #NORMAL_VIEW_ROOT}/{@link #ANDROID_VIEW_ROOT} and {@code setAndroidMod} are then
-   * switched at runtime by the Normal View / Android View buttons.
+   * {@link #NORMAL_VIEW_ROOT} and {@code setAndroidMod} are then switched at runtime by the
+   * Normal View / Android View buttons (the latter reads its target path from {@code
+   * binding.androidmod}'s EditText instead of a hardcoded constant).
    */
   private void setupDrawerFileTree() {
     FileTreeView view = new FileTreeView(this);
@@ -95,11 +98,6 @@ public class MainActivity extends AppCompatActivity {
 
     // --- Row appearance ---
     view.setIconArrow(R.drawable.ic_badge_error);
-
-    view.setNodePath("/storage/emulated/0/");
-    view.setGitStatus(
-        "/storage/emulated/0/AndroidIDEProjects/Ghostide33", FilePayload.GIT_MODIFIED);
-    view.loadTree();
 
     int[] rainbowColors = {
       Color.parseColor("#FFD9FF00"),
@@ -170,6 +168,36 @@ public class MainActivity extends AppCompatActivity {
     // view.setSelectionPanel(myCustomSelectionPanel); // swap in a custom selection action panel
 
     binding.drawer.addView(view);
+  }
+
+  /**
+   * Path-input dialog for {@link FileTreeView#expandToPath(String, boolean)} — type any absolute
+   * path under the tree's current root and OK opens the drawer with every ancestor folder
+   * expanded and the target row highlighted (using the theme's search-highlight color), so it's
+   * unambiguous which file this is even if others share its name elsewhere in the tree.
+   */
+  private void showExpandToPathDialog() {
+    EditText input = new EditText(this);
+    input.setHint("/storage/emulated/0/...");
+    new AlertDialog.Builder(this)
+        .setTitle("Expand To Path")
+        .setView(input)
+        .setPositiveButton(
+            "OK",
+            (dialog, which) -> {
+              String path = input.getText().toString().trim();
+              if (path.isEmpty()) return;
+              boolean attempted = drawerFileTreeView.expandToPath(path, true);
+              if (!attempted) {
+                Toast.makeText(
+                        this, "Path doesn't exist under the current root", Toast.LENGTH_SHORT)
+                    .show();
+                return;
+              }
+              binding.drawerLayout.openDrawer(GravityCompat.START);
+            })
+        .setNegativeButton("Cancel", null)
+        .show();
   }
 
   @Override

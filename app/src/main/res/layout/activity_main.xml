@@ -45,6 +45,14 @@
             android:id="@+id/launchSampleExplorer"
             android:text="Basic Explorer Activity" />
 
+        <Button
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textSize="16sp"
+            android:id="@+id/btnExpandToPath"
+            android:text="Expand To Path (Highlight Demo)" />
+
     </LinearLayout>
 
     <FrameLayout
