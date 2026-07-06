@@ -7,6 +7,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.PopupWindow;
 import android.widget.Toast;
 import androidx.appcompat.app.ActionBarDrawerToggle;
@@ -19,6 +20,7 @@ import ir.hanzodev1375.filetreelib.core.TreeNode;
 import ir.hanzodev1375.filetreelib.model.FilePayload;
 import ir.hanzodev1375.filetreelibglide.FileIconGlide;
 import ir.hanzodev1375.filetreelib.widget.FileTreeView;
+import java.io.File;
 import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
@@ -42,22 +44,52 @@ public class MainActivity extends AppCompatActivity {
     // this doubles as a demo that setAndroidMod()/setNodePath() can be switched at runtime.
     binding.btnNormalView.setOnClickListener(
         v -> {
+          String path = binding.androidmod.getText().toString().trim();
+          if (path.isEmpty()) {
+            path = NORMAL_VIEW_ROOT;
+            binding.androidmod.setText(path);
+          }
+          
+          File dir = new File(path);
+          if (!dir.exists() || !dir.isDirectory()) {
+            Toast.makeText(MainActivity.this, 
+                "Path does not exist: " + path, 
+                Toast.LENGTH_SHORT).show();
+            return;
+          }
+          
           drawerFileTreeView.setAndroidMod(false);
-          drawerFileTreeView.setNodePath(NORMAL_VIEW_ROOT);
+          drawerFileTreeView.setNodePath(path);
           drawerFileTreeView.loadTree();
           binding.drawerLayout.openDrawer(GravityCompat.START);
         });
+        
     binding.btnAndroidView.setOnClickListener(
         v -> {
-          drawerFileTreeView.setNodePath(binding.androidmod.getText().toString());
-          drawerFileTreeView.loadTree();
+          String path = binding.androidmod.getText().toString().trim();
+          if (path.isEmpty()) {
+            path = NORMAL_VIEW_ROOT;
+            binding.androidmod.setText(path);
+          }
+          
+          File dir = new File(path);
+          if (!dir.exists() || !dir.isDirectory()) {
+            Toast.makeText(MainActivity.this, 
+                "Path does not exist: " + path, 
+                Toast.LENGTH_SHORT).show();
+            return;
+          }
+          
           drawerFileTreeView.setAndroidMod(true);
+          drawerFileTreeView.setNodePath(path);
+          drawerFileTreeView.loadTree();
           binding.drawerLayout.openDrawer(GravityCompat.START);
         });
+        
     //    binding.btnPopupWindow.setOnClickListener(v -> buildinPopWindows());
     binding.launchSampleExplorer.setOnClickListener(
         v -> startActivity(new Intent(getApplicationContext(), SampleExplorerActivity.class)));
-
+    
     ActionBarDrawerToggle toggle =
         new ActionBarDrawerToggle(
             MainActivity.this, binding.drawerLayout, null, R.string.app_name, R.string.app_name);
@@ -68,8 +100,9 @@ public class MainActivity extends AppCompatActivity {
   /**
    * Left-drawer FileTreeView — the main demo surface. Set up once here with everyday API calls
    * (zoom, theming, click/long-click handling, the selection-mode/drag opt-outs, search bar);
-   * {@link #NORMAL_VIEW_ROOT}/{@link #ANDROID_VIEW_ROOT} and {@code setAndroidMod} are then
-   * switched at runtime by the Normal View / Android View buttons.
+   * {@link #NORMAL_VIEW_ROOT} and {@code setAndroidMod} are then switched at runtime by the
+   * Normal View / Android View buttons (the latter reads its target path from {@code
+   * binding.androidmod}'s EditText instead of a hardcoded constant).
    */
   private void setupDrawerFileTree() {
     FileTreeView view = new FileTreeView(this);
@@ -95,11 +128,6 @@ public class MainActivity extends AppCompatActivity {
 
     // --- Row appearance ---
     view.setIconArrow(R.drawable.ic_badge_error);
-
-    view.setNodePath("/storage/emulated/0/");
-    view.setGitStatus(
-        "/storage/emulated/0/AndroidIDEProjects/Ghostide33", FilePayload.GIT_MODIFIED);
-    view.loadTree();
 
     int[] rainbowColors = {
       Color.parseColor("#FFD9FF00"),
@@ -171,7 +199,7 @@ public class MainActivity extends AppCompatActivity {
 
     binding.drawer.addView(view);
   }
-
+  
   @Override
   protected void onDestroy() {
     super.onDestroy();
