@@ -89,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
     //    binding.btnPopupWindow.setOnClickListener(v -> buildinPopWindows());
     binding.launchSampleExplorer.setOnClickListener(
         v -> startActivity(new Intent(getApplicationContext(), SampleExplorerActivity.class)));
-
+    
     ActionBarDrawerToggle toggle =
         new ActionBarDrawerToggle(
             MainActivity.this, binding.drawerLayout, null, R.string.app_name, R.string.app_name);

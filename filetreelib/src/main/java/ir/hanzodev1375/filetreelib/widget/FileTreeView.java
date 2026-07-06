@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
@@ -72,7 +71,6 @@ public class FileTreeView extends LinearLayout {
   private TreeNode androidModGroup = null;
   private DragManager dragManager;
   private boolean autoExpandSingleChildChains = false;
-  private TreeNode highlightedNode = null;
   private ExecutorService androidModExecutor;
   private int androidModApplyToken = 0;
   public FileTreeView(Context context) {
@@ -220,16 +218,6 @@ public class FileTreeView extends LinearLayout {
   }
 
   public void loadTree() {
-    String nodePath = getNodePath();
-    if (nodePath == null || nodePath.trim().isEmpty()) {
-      // File("").getName() is "" — TreeNode.Builder rejects an empty name, so this used to crash
-      // deep in TreeNode$Builder.<init> with a message that gave no hint the real problem was an
-      // unset/blank setNodePath() call. Fail soft instead: a caller forgetting to validate user
-      // input (e.g. an empty EditText) shouldn't take the whole app down.
-      Log.w("FileTreeView", "loadTree() called with an empty node path — ignoring");
-      return;
-    }
-
     // loadTree() can now be called more than once per view (the breadcrumb re-roots the tree by
     // calling it again) — tear down what the previous call created so we don't leak the old
     // background executor or keep watching a directory we no longer show.
@@ -237,7 +225,7 @@ public class FileTreeView extends LinearLayout {
     if (fileWatcher != null) fileWatcher.unwatchAll();
     androidModGroup = null;
 
-    File rootDir = new File(nodePath);
+    File rootDir = new File(getNodePath());
     FilePayload rootPayload = new FilePayload.Builder(rootDir.getAbsolutePath(), true).build();
     TreeNode rootNode = TreeNode.root();
 
@@ -257,9 +245,6 @@ public class FileTreeView extends LinearLayout {
     controller =
         new TreeController.Builder(provider).model(model).cache(new TreeCache(512)).build();
 
-    treeView.setup(controller, theme);
-    adapter = treeView.getTreeAdapter();
-
     // Auto-descend a chain of single-child folders — e.g. Android Studio's "compact middle
     // packages": expanding a folder that turns out to contain exactly one item keeps expanding
     // that item too, and so on, stopping the moment a folder has 2+ items (or the chain ends at a
@@ -267,19 +252,6 @@ public class FileTreeView extends LinearLayout {
     // already sitting there from android-mod's synthetic tree — both paths fire the same
     // onNodesExpanded callback once a node's children become visible, so one listener covers both
     // modes without needing to know which one is active.
-    //
-    // IMPORTANT: this must be registered AFTER treeView.setup() (i.e. after the adapter has
-    // registered itself as an ExpandListener), not before. ExpandManager notifies listeners in
-    // registration order, and this listener reacts to onNodesExpanded by synchronously calling
-    // controller.expandNode() again (a nested/reentrant expand — e.g. instant when the child's
-    // subtree is already TreeCache-hit). If this listener were notified before the adapter,
-    // that nested expand would mutate visibleList and fire another onNodesExpanded — reaching the
-    // adapter for the INNER insert before the adapter had processed the OUTER one — so the
-    // adapter would call notifyItemRangeInserted() at a position beyond what RecyclerView
-    // currently believes the item count to be, crashing with "Invalid item position" during the
-    // next layout pass. Registering after setup() guarantees the adapter always sees the outer
-    // insert first, so every nested insert's position is consistent with what RecyclerView has
-    // already been told.
     controller
         .getExpandManager()
         .addExpandListener(
@@ -299,6 +271,9 @@ public class FileTreeView extends LinearLayout {
               public void onNodesCollapsed(
                   @NonNull TreeNode parent, @NonNull List<TreeNode> removed, int removePos) {}
             });
+
+    treeView.setup(controller, theme);
+    adapter = treeView.getTreeAdapter();
 
     // Fresh tree -> breadcrumb shows just the root path segments (clears any previously
     // selected-node extension from the tree we just replaced).
@@ -320,7 +295,6 @@ public class FileTreeView extends LinearLayout {
       adapter.setOnNodeLongClickListener(pendingLongClickListener);
       adapter.setOnNodeClickListener(
           (node, view) -> {
-            clearHighlight();
             breadcrumbbar.setSelectedNode(node, rootTreeNode);
             if (node.isFolder() || node.isVirtual()) {
               lastOpenedFolder = node;
@@ -992,8 +966,7 @@ public class FileTreeView extends LinearLayout {
   /**
    * Expands every ancestor folder of {@code targetPath} (loading each one from disk first if
    * needed) and reveals/scrolls to it once found — e.g. jumping straight to a file deep in the
-   * tree without the user manually tapping through each folder in between. Equivalent to {@link
-   * #expandToPath(String, boolean)} with {@code highlight} false.
+   * tree without the user manually tapping through each folder in between.
    *
    * @param targetPath absolute path of the file/folder to reveal
    * @return {@code false} immediately, without touching the tree, if {@code targetPath} doesn't
@@ -1008,28 +981,6 @@ public class FileTreeView extends LinearLayout {
    *     already-present children instead of lazy-loading them.
    */
   public boolean expandToPath(@NonNull String targetPath) {
-    return expandToPath(targetPath, false);
-  }
-
-  /**
-   * Same as {@link #expandToPath(String)}, and if {@code highlight} is {@code true}, also marks
-   * the found node highlighted (see {@link TreeNode#isHighlighted()}) once revealed — useful when
-   * several files share a name and the point is to show the user exactly *which* one this is,
-   * e.g. showing an open editor tab's location in a search result or a multi-tab setup. Rendered
-   * with {@link ir.hanzodev1375.filetreelib.theme.ThemeManager#getSearchHighlightColor()} — the
-   * same color already used to highlight search matches, and already themeable/customizable via
-   * {@link #getTheme()}'s {@code setSearchHighlightColor(int)} — so a fully custom theme is
-   * followed automatically, no separate color knob needed.
-   *
-   * <p>Only one node is highlighted at a time: calling this again (with {@code highlight} true)
-   * clears the previous highlight first, as does tapping any node in the tree. Use {@link
-   * #clearHighlight()} to remove it manually without waiting for either of those.
-   *
-   * @param targetPath absolute path of the file/folder to reveal
-   * @param highlight whether to highlight the target once found
-   * @return same meaning as {@link #expandToPath(String)}
-   */
-  public boolean expandToPath(@NonNull String targetPath, boolean highlight) {
     if (controller == null || rootTreeNode == null) return false;
 
     File root = new File(rootTreeNode.getId());
@@ -1044,31 +995,13 @@ public class FileTreeView extends LinearLayout {
     }
     if (cur == null) return false; // targetPath isn't under the current root at all
 
-    expandToPathSegment(rootTreeNode, segments, 0, highlight);
+    expandToPathSegment(rootTreeNode, segments, 0);
     return true;
   }
 
-  /**
-   * Clears whichever node {@link #expandToPath(String, boolean)} last highlighted, if any.
-   * Also called automatically whenever any node is tapped, so the highlight naturally goes away
-   * once the user moves on instead of sitting there forever.
-   */
-  public void clearHighlight() {
-    if (highlightedNode == null) return;
-    highlightedNode.setHighlighted(false);
-    if (controller != null) controller.getModel().notifyNodeChanged(highlightedNode);
-    highlightedNode = null;
-  }
-
   private void expandToPathSegment(
-      @NonNull TreeNode current, @NonNull List<String> segments, int index, boolean highlight) {
+      @NonNull TreeNode current, @NonNull List<String> segments, int index) {
     if (index >= segments.size()) {
-      if (highlight) {
-        clearHighlight();
-        current.setHighlighted(true);
-        highlightedNode = current;
-        controller.getModel().notifyNodeChanged(current);
-      }
       controller.revealNode(current);
       return;
     }
@@ -1089,7 +1022,7 @@ public class FileTreeView extends LinearLayout {
             controller.revealNode(current);
             return;
           }
-          expandToPathSegment(match, segments, index + 1, highlight);
+          expandToPathSegment(match, segments, index + 1);
         };
 
     if (current.getChildCount() > 0 || !current.hasChildren()) {

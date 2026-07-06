@@ -32,7 +32,6 @@ public final class TreeDiffCallback extends DiffUtil.Callback {
         if (!o.getName().equals(n.getName()))         return false;
         if (o.isExpanded()  != n.isExpanded())        return false;
         if (o.isSelected()  != n.isSelected())        return false;
-        if (o.isHighlighted() != n.isHighlighted())    return false;
         if (o.isBookmarked()!= n.isBookmarked())      return false;
         if (o.isLazyLoadPending() != n.isLazyLoadPending()) return false;
         FilePayload op = o.getPayload(FilePayload.class);
