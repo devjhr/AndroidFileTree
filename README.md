@@ -191,40 +191,6 @@ regardless of this setting.
 
 ---
 
-# Expand To Path / Highlight
-
-Jump straight to a file/folder deep in the tree — expands every ancestor folder (lazy-loading
-each one from disk if needed) and scrolls to it, without the user tapping through each level:
-
-```java
-view.expandToPath("/storage/emulated/0/Project/app/src/main/java/com/example/Main.java");
-```
-
-Returns `false` immediately (no-op) if the path doesn't exist or isn't under the tree's current
-root. Pass `true` as a second argument to also highlight the row once found — useful when several
-files share a name and you want to show the user exactly which one this is (e.g. an open editor
-tab's location):
-
-```java
-view.expandToPath(path, true);
-```
-
-Only one node is highlighted at a time; tapping any node in the tree clears it automatically, or
-clear it manually:
-
-```java
-view.clearHighlight();
-```
-
-The highlight color reuses the theme's search-match highlight color, so a custom theme is
-followed automatically:
-
-```java
-view.getTheme().setSearchHighlightColor(Color.parseColor("#FFEB3B"));
-```
-
----
-
 # Auto-Expand Single-Child Chains
 
 Android Studio's "compact middle packages" behavior, for any folder shape: expanding a folder

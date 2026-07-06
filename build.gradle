@@ -11,5 +11,5 @@ tasks.register('clean', Delete) {
 
 allprojects {
     group = findProperty("group") ?: "com.github.HanzoDev1375"
-    version = findProperty("version") ?: "1.1.2"
+    version = findProperty("version") ?: "1.1.3"
 }

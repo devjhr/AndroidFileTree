@@ -20,6 +20,7 @@ import ir.hanzodev1375.filetreelib.core.TreeNode;
 import ir.hanzodev1375.filetreelib.model.FilePayload;
 import ir.hanzodev1375.filetreelibglide.FileIconGlide;
 import ir.hanzodev1375.filetreelib.widget.FileTreeView;
+import java.io.File;
 import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
@@ -43,22 +44,51 @@ public class MainActivity extends AppCompatActivity {
     // this doubles as a demo that setAndroidMod()/setNodePath() can be switched at runtime.
     binding.btnNormalView.setOnClickListener(
         v -> {
+          String path = binding.androidmod.getText().toString().trim();
+          if (path.isEmpty()) {
+            path = NORMAL_VIEW_ROOT;
+            binding.androidmod.setText(path);
+          }
+          
+          File dir = new File(path);
+          if (!dir.exists() || !dir.isDirectory()) {
+            Toast.makeText(MainActivity.this, 
+                "Path does not exist: " + path, 
+                Toast.LENGTH_SHORT).show();
+            return;
+          }
+          
           drawerFileTreeView.setAndroidMod(false);
-          drawerFileTreeView.setNodePath(NORMAL_VIEW_ROOT);
+          drawerFileTreeView.setNodePath(path);
           drawerFileTreeView.loadTree();
           binding.drawerLayout.openDrawer(GravityCompat.START);
         });
+        
     binding.btnAndroidView.setOnClickListener(
         v -> {
-          drawerFileTreeView.setNodePath(binding.androidmod.getText().toString());
-          drawerFileTreeView.loadTree();
+          String path = binding.androidmod.getText().toString().trim();
+          if (path.isEmpty()) {
+            path = NORMAL_VIEW_ROOT;
+            binding.androidmod.setText(path);
+          }
+          
+          File dir = new File(path);
+          if (!dir.exists() || !dir.isDirectory()) {
+            Toast.makeText(MainActivity.this, 
+                "Path does not exist: " + path, 
+                Toast.LENGTH_SHORT).show();
+            return;
+          }
+          
           drawerFileTreeView.setAndroidMod(true);
+          drawerFileTreeView.setNodePath(path);
+          drawerFileTreeView.loadTree();
           binding.drawerLayout.openDrawer(GravityCompat.START);
         });
+        
     //    binding.btnPopupWindow.setOnClickListener(v -> buildinPopWindows());
     binding.launchSampleExplorer.setOnClickListener(
         v -> startActivity(new Intent(getApplicationContext(), SampleExplorerActivity.class)));
-    binding.btnExpandToPath.setOnClickListener(v -> showExpandToPathDialog());
 
     ActionBarDrawerToggle toggle =
         new ActionBarDrawerToggle(
@@ -169,37 +199,7 @@ public class MainActivity extends AppCompatActivity {
 
     binding.drawer.addView(view);
   }
-
-  /**
-   * Path-input dialog for {@link FileTreeView#expandToPath(String, boolean)} — type any absolute
-   * path under the tree's current root and OK opens the drawer with every ancestor folder
-   * expanded and the target row highlighted (using the theme's search-highlight color), so it's
-   * unambiguous which file this is even if others share its name elsewhere in the tree.
-   */
-  private void showExpandToPathDialog() {
-    EditText input = new EditText(this);
-    input.setHint("/storage/emulated/0/...");
-    new AlertDialog.Builder(this)
-        .setTitle("Expand To Path")
-        .setView(input)
-        .setPositiveButton(
-            "OK",
-            (dialog, which) -> {
-              String path = input.getText().toString().trim();
-              if (path.isEmpty()) return;
-              boolean attempted = drawerFileTreeView.expandToPath(path, true);
-              if (!attempted) {
-                Toast.makeText(
-                        this, "Path doesn't exist under the current root", Toast.LENGTH_SHORT)
-                    .show();
-                return;
-              }
-              binding.drawerLayout.openDrawer(GravityCompat.START);
-            })
-        .setNegativeButton("Cancel", null)
-        .show();
-  }
-
+  
   @Override
   protected void onDestroy() {
     super.onDestroy();
