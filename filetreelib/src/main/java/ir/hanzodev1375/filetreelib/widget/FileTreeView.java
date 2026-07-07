@@ -263,7 +263,23 @@ public class FileTreeView extends LinearLayout {
                 if (parent.getChildCount() != 1) return;
                 TreeNode onlyChild = parent.getChildren().get(0);
                 if (onlyChild.isFolder() || onlyChild.isVirtual()) {
-                  controller.expandNode(onlyChild);
+                  // Defer instead of calling expandNode() synchronously here. This
+                  // callback fires from inside ExpandManager's listener-notification
+                  // loop for `parent` — expanding now would start a second, nested
+                  // expand()+notify cycle before TreeAdapter's own listener has even
+                  // processed this level yet, which corrupts TreeAdapter's
+                  // currentList/visibleList sync (mixing its sync fast-path and async
+                  // diff-path updates) and eventually crashes RecyclerView with
+                  // "Inconsistency detected" once the chain is collapsed and
+                  // re-expanded. Posting breaks the reentrancy: this level's
+                  // notification fully finishes first, then the next level's
+                  // expand() runs as its own independent, top-level call.
+                  post(
+                      () -> {
+                        if (onlyChild.getParent() != null && !onlyChild.isExpanded()) {
+                          controller.expandNode(onlyChild);
+                        }
+                      });
                 }
               }
 
