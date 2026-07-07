@@ -127,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
     view.setIconProvider(new FileIconGlide());
 
     // --- Row appearance ---
-    view.setIconArrow(R.drawable.ic_badge_error);
+    view.setIconArrow(R.drawable.ic_filetree_badge_error);
 
     int[] rainbowColors = {
       Color.parseColor("#FFD9FF00"),

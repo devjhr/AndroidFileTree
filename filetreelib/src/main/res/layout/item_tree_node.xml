@@ -38,7 +38,7 @@
              android:layout_height="16dp"
              android:layout_width="16dp"
              android:layout_gravity="center"
-             android:src="@drawable/ic_arrow_right"
+             android:src="@drawable/ic_filetree_arrow_right"
              android:scaleType="centerInside"
              android:contentDescription="@string/cd_expand_arrow"
              android:id="@+id/tv_arrow" />
@@ -71,7 +71,7 @@
              android:layout_height="7dp"
              android:layout_width="7dp"
              android:layout_gravity="bottom|end"
-             android:src="@drawable/badge_dot"
+             android:src="@drawable/ic_filetree_badge_dot"
              android:visibility="gone"
              android:importantForAccessibility="no"
              android:id="@+id/tv_icon_badge" />
@@ -105,7 +105,7 @@
          android:layout_height="12dp"
          android:layout_width="12dp"
          android:visibility="gone"
-         android:src="@drawable/ic_badge_git_conflict"
+         android:src="@drawable/ic_filetree_badge_git_conflict"
          android:scaleType="centerInside"
          android:contentDescription="@string/cd_badge_icon"
          android:layout_marginStart="4dp"
@@ -114,7 +114,7 @@
     <ImageView
          android:layout_height="18dp"
          android:layout_width="18dp"
-         android:src="@drawable/icon_attach_file_round"
+         android:src="@drawable/ic_filetree_attach_file_round"
          android:scaleType="centerInside"
          android:contentDescription="@string/cd_badge_icon"
          android:layout_marginLeft="4dp"
@@ -125,7 +125,7 @@
     <ImageView
          android:layout_height="18dp"
          android:layout_width="18dp"
-         android:src="@drawable/icon_create_new_folder_round"
+         android:src="@drawable/ic_filetree_create_new_folder_round"
          android:scaleType="centerInside"
          android:contentDescription="@string/cd_badge_icon"
          android:layout_marginLeft="2dp"

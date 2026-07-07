@@ -89,11 +89,11 @@ public final class TreeViewHolder extends RecyclerView.ViewHolder {
       ivArrow.setRotation(node.isExpanded() ? 90f : 0f);
     }
     if (iconArrow == 0) {
-      iconArrow = R.drawable.ic_arrow_right;
+      iconArrow = R.drawable.ic_filetree_arrow_right;
     }
-    iconArrow = R.drawable.ic_arrow_right;
+    iconArrow = R.drawable.ic_filetree_arrow_right;
     if (iconArrow == 0) {
-      iconArrow = R.drawable.ic_arrow_right;
+      iconArrow = R.drawable.ic_filetree_arrow_right;
     }
     ivArrow.setImageResource(iconArrow);
     ivArrow.setOnClickListener(selectionMode ? null : arrowClickListener);

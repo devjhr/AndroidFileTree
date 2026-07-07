@@ -33,7 +33,7 @@
             android:contentDescription="@string/cd_close_selection"
             android:padding="10dp"
             android:scaleType="centerInside"
-            android:src="@drawable/ic_close"
+            android:src="@drawable/ic_filetree_close"
             android:tint="?colorOnSurface"
             />
 
@@ -70,7 +70,7 @@
             android:contentDescription="@string/cd_copy"
             android:padding="10dp"
             android:scaleType="centerInside"
-            android:src="@drawable/ic_copy"
+            android:src="@drawable/ic_filetree_copy"
             android:tint="?colorOnSurface"
             />
 
@@ -84,7 +84,7 @@
             android:contentDescription="@string/cd_cut"
             android:padding="10dp"
             android:scaleType="centerInside"
-            android:src="@drawable/ic_cut"
+            android:src="@drawable/ic_filetree_cut"
             android:tint="?colorOnSurface"
             />
 
@@ -98,7 +98,7 @@
             android:contentDescription="@string/cd_paste"
             android:padding="10dp"
             android:scaleType="centerInside"
-            android:src="@drawable/ic_paste"
+            android:src="@drawable/ic_filetree_paste"
             android:tint="?colorOnSurface"
             />
 
@@ -112,7 +112,7 @@
             android:contentDescription="@string/cd_rename"
             android:padding="10dp"
             android:scaleType="centerInside"
-            android:src="@drawable/ic_rename"
+            android:src="@drawable/ic_filetree_rename"
             android:tint="?colorOnSurface"
             android:visibility="gone"
             />
@@ -127,7 +127,7 @@
             android:contentDescription="@string/cd_select_all"
             android:padding="10dp"
             android:scaleType="centerInside"
-            android:src="@drawable/outline_select_all"
+            android:src="@drawable/filetree_outline_select_all"
             android:tint="?colorOnSurface"
             />
 
@@ -141,7 +141,7 @@
             android:contentDescription="@string/cd_delete"
             android:padding="10dp"
             android:scaleType="centerInside"
-            android:src="@drawable/ic_delete"
+            android:src="@drawable/ic_filetree_delete"
             android:tint="?colorOnSurface"
             />
 
@@ -155,7 +155,7 @@
             android:contentDescription="@string/cd_more_options"
             android:padding="10dp"
             android:scaleType="centerInside"
-            android:src="@drawable/more_vert"
+            android:src="@drawable/filetree_more_vert"
             android:tint="?colorOnSurface"
             />
 

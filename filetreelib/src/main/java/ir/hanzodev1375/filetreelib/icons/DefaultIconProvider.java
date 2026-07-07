@@ -92,23 +92,23 @@ public class DefaultIconProvider extends BaseIconProvider {
     }
 
     if (p.getErrorCount() > 0) {
-      return ContextCompat.getDrawable(context, R.drawable.ic_badge_error);
+      return ContextCompat.getDrawable(context, R.drawable.ic_filetree_badge_error);
     }
 
     if (p.isBookmarked()) {
-      return ContextCompat.getDrawable(context, R.drawable.ic_badge_bookmark);
+      return ContextCompat.getDrawable(context, R.drawable.ic_filetree_badge_bookmark);
     }
 
     if (p.isGitModified()) {
-      return ContextCompat.getDrawable(context, R.drawable.ic_badge_git_modified);
+      return ContextCompat.getDrawable(context, R.drawable.ic_filetree_badge_git_modified);
     }
 
     if (p.isGitStaged()) {
-      return ContextCompat.getDrawable(context, R.drawable.ic_badge_git_staged);
+      return ContextCompat.getDrawable(context, R.drawable.ic_filetree_badge_git_staged);
     }
 
     if (p.isGitConflicted()) {
-      return ContextCompat.getDrawable(context, R.drawable.ic_badge_git_conflict);
+      return ContextCompat.getDrawable(context, R.drawable.ic_filetree_badge_git_conflict);
     }
 
     return null;
