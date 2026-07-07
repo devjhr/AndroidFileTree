@@ -46,7 +46,6 @@
             app:tv_animateDuration="180"
             app:tv_animateExpand="true"
             app:tv_indentWidth="20dp"
-            app:tv_showTreeLines="true"
             tools:viewBehavior="LinearLayout_vertical" />
 
     </ir.hanzodev1375.filetreelib.widget.TwoDScrollView>

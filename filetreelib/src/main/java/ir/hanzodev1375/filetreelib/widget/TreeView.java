@@ -65,6 +65,11 @@ public final class TreeView extends RecyclerView {
       TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.TreeView);
       showTreeLines = a.getBoolean(R.styleable.TreeView_tv_showTreeLines, true);
       rainbowIndentGuides = a.getBoolean(R.styleable.TreeView_tv_rainbowIndentGuides, false);
+      if (rainbowIndentGuides && !showTreeLines) {
+        // Rainbow guides are just colored tree lines — with lines off there'd be nothing to
+        // colorize, so a config asking for both is contradictory. Lines win.
+        showTreeLines = true;
+      }
       animateExpand = a.getBoolean(R.styleable.TreeView_tv_animateExpand, true);
       animDuration = a.getInt(R.styleable.TreeView_tv_animateDuration, 30);
       a.recycle();
@@ -363,7 +368,21 @@ public final class TreeView extends RecyclerView {
   public void setShowTreeLines(boolean show) {
     showTreeLines = show;
     if (treeDecoration != null) treeDecoration.setShowLines(show);
+    if (!show && rainbowIndentGuides) {
+      // Rainbow indent guides are colored tree lines — with lines hidden there's nothing left to
+      // colorize, so turning lines off implicitly turns rainbow off too rather than leaving a
+      // "rainbow enabled but invisible" state. setRainbowIndentGuides() invalidates for us.
+      setRainbowIndentGuides(false);
+      return;
+    }
     invalidateItemDecorations();
+  }
+
+  /**
+   * @return whether tree/indent guide lines are currently shown. Default {@code true}.
+   */
+  public boolean isShowTreeLines() {
+    return showTreeLines;
   }
 
   /**
@@ -373,6 +392,11 @@ public final class TreeView extends RecyclerView {
    * decoration is created).
    */
   public void setRainbowIndentGuides(boolean enabled) {
+    if (enabled && !showTreeLines) {
+      // Rainbow colors only render on top of the indent guide lines themselves, so enabling this
+      // while lines are off would silently do nothing — bring lines back on to match instead.
+      setShowTreeLines(true);
+    }
     rainbowIndentGuides = enabled;
     if (treeDecoration != null) {
       treeDecoration.setRainbowIndentGuides(enabled);

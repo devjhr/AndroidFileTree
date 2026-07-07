@@ -143,6 +143,10 @@ public final class TreeAdapter extends RecyclerView.Adapter<TreeViewHolder> {
                     && removePos + removed.size() <= currentList.size();
 
             if (canFastPath) {
+                // Same reasoning as in staggerInsert(): invalidate any pending async
+                // diff so it can't later re-notify RecyclerView about rows this sync
+                // fast-path removal already accounted for.
+                ++diffRequestId;
                 for (int i = 0; i < removed.size(); i++) {
                     currentList.remove(removePos);
                 }
@@ -205,6 +209,14 @@ public final class TreeAdapter extends RecyclerView.Adapter<TreeViewHolder> {
      */
     private void staggerInsert(@NonNull TreeNode parent, @NonNull List<TreeNode> inserted,
                                int insertPos, int parentPos) {
+        // Invalidate any in-flight async submitNewList() diff. If one is still
+        // computing on the background thread when it later posts to the main
+        // thread, its captured oldList/newList snapshot predates this synchronous
+        // mutation — applying it would re-notify RecyclerView about rows we are
+        // about to insert right now via the fast path below, double-counting them
+        // and corrupting RecyclerView's internal item-count bookkeeping.
+        ++diffRequestId;
+
         int totalSize = inserted.size();
 
         currentList.add(insertPos, inserted.get(0));

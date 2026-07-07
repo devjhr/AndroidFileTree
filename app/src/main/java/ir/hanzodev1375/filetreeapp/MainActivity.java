@@ -89,7 +89,13 @@ public class MainActivity extends AppCompatActivity {
     //    binding.btnPopupWindow.setOnClickListener(v -> buildinPopWindows());
     binding.launchSampleExplorer.setOnClickListener(
         v -> startActivity(new Intent(getApplicationContext(), SampleExplorerActivity.class)));
-    
+
+    // One-stop panel exposing every runtime-toggleable FileTreeView API (zoom, theme, icon
+    // provider, git status, virtual groups, expandToPath, etc.) as switches/buttons acting live
+    // on drawerFileTreeView — a quick way to exercise/verify each feature by hand.
+    binding.btnFeatureControls.setOnClickListener(
+        v -> FeatureControlSheet.show(MainActivity.this, drawerFileTreeView, binding.drawerLayout));
+
     ActionBarDrawerToggle toggle =
         new ActionBarDrawerToggle(
             MainActivity.this, binding.drawerLayout, null, R.string.app_name, R.string.app_name);
@@ -145,7 +151,7 @@ public class MainActivity extends AppCompatActivity {
     Log.d(TAG, "rainbowIndentGuides=" + view.isRainbowIndentGuides());
 
     // --- Search bar (hidden by default) ---
-    view.setShowSearchBar(true);
+   // view.setShowSearchBar(true);
     Log.d(TAG, "showSearchBar=" + view.getShowSearchBar());
 
     // --- Git status badge on a node (normally driven by a GitViewModel/GitManager) ---
