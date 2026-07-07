@@ -8,44 +8,59 @@
     android:id="@+id/drawerLayout"
     tools:context=".MainActivity">
 
-    <LinearLayout
+    <FrameLayout
         android:layout_height="match_parent"
-        android:layout_width="match_parent"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:padding="16dp">
-        <EditText
-            android:id="@+id/androidmod"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:hint="InputAndroid Project"
-            android:inputType="text"
-            android:layout_gravity="top|start"
-             />
-        <Button
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:textSize="16sp"
-            android:id="@+id/btnNormalView"
-            android:text="Normal File Tree View" />
+        android:layout_width="match_parent">
 
-        <Button
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:textSize="16sp"
-            android:id="@+id/btnAndroidView"
-            android:text="Android View (Project Structure)" />
+        <LinearLayout
+            android:layout_height="match_parent"
+            android:layout_width="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="16dp">
+            <EditText
+                android:id="@+id/androidmod"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:hint="InputAndroid Project"
+                android:inputType="text"
+                android:layout_gravity="top|start"
+                 />
+            <Button
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:textSize="16sp"
+                android:id="@+id/btnNormalView"
+                android:text="Normal File Tree View" />
 
-        <Button
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
-            android:textSize="16sp"
-            android:id="@+id/launchSampleExplorer"
-            android:text="Basic Explorer Activity" />
+            <Button
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:textSize="16sp"
+                android:id="@+id/btnAndroidView"
+                android:text="Android View (Project Structure)" />
 
-    </LinearLayout>
+            <Button
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:textSize="16sp"
+                android:id="@+id/launchSampleExplorer"
+                android:text="Basic Explorer Activity" />
+
+        </LinearLayout>
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/btnFeatureControls"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="24dp"
+            android:contentDescription="Feature Controls"
+            app:srcCompat="@android:drawable/ic_menu_manage" />
+
+    </FrameLayout>
 
     <FrameLayout
         android:layout_height="match_parent"
