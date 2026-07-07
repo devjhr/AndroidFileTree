@@ -6,21 +6,15 @@ import android.graphics.drawable.PictureDrawable;
 import android.view.View;
 import android.widget.ImageView;
 
-import android.widget.Toast;
 import androidx.annotation.NonNull;
 
 import com.bumptech.glide.Glide;
-
-import com.bumptech.glide.request.Request;
-import com.bumptech.glide.request.target.SizeReadyCallback;
-import com.bumptech.glide.request.target.CustomTarget;
-import com.bumptech.glide.request.transition.Transition;
+import ir.hanzodev1375.filetreelib.R;
 import ir.hanzodev1375.filetreelib.filetreelibglide.glide.xml.VectorModel;
 import ir.hanzodev1375.filetreelib.icons.BaseIconProvider;
 import ir.hanzodev1375.filetreelib.icons.DefaultIconProvider;
 import ir.hanzodev1375.filetreelib.core.TreeNode;
 import java.io.File;
-import ir.hanzodev1375.filetreelib.R;
 import ir.hanzodev1375.filetreelibglide.drawablexml.DrawableXmlLoader;
 import ir.hanzodev1375.filetreelibglide.drawablexml.AlphaPatternDrawable;
 
@@ -46,32 +40,20 @@ public class FileIconGlide extends BaseIconProvider {
     }
 
     if (isVectorXmlFile(node) && path != null) {
-
-      Drawable vd = DrawableXmlLoader.load(context, new File(path));
-      if (vd != null) {
+      Glide.with(context)
+          .as(Drawable.class)
+          .load(new VectorModel(new File(path), context))
+          .placeholder(R.drawable.ic_filetree_xml)
+          .into(target);
+    }
+    if (node.getName().toLowerCase().endsWith(".pdf")) {
+      if (path != null) {
         Glide.with(context)
-            .asDrawable()
-            .placeholder(R.drawable.ic_filetree_xml)
-            .load(vd)
-            .into(
-                new CustomTarget<Drawable>() {
-
-                  @Override
-                  public void onLoadStarted(Drawable arg0) {}
-
-                  @Override
-                  public void onLoadFailed(Drawable arg0) {}
-
-                  @Override
-                  public void onResourceReady(Drawable vda, Transition<? super Drawable> arg1) {
-                    target.setImageDrawable(vda);
-                    target.setBackground(new AlphaPatternDrawable());
-                  }
-
-                  @Override
-                  public void onLoadCleared(Drawable arg0) {}
-                });
-        return;
+            .asBitmap()
+            .load(path)
+            .placeholder(R.drawable.ic_filetree_pdf)
+            .error(R.drawable.ic_filetree_pdf)
+            .into(target);
       }
     }
 

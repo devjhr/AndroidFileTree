@@ -14,6 +14,7 @@ import java.io.File;
  * Tries VectorMasterDrawable first (for {@code <vector>} XML), then falls back to XmlShapeParser
  * (shape/selector/layer-list/ripple/inset).
  */
+@Deprecated
 public final class DrawableXmlLoader {
 
   private DrawableXmlLoader() {}

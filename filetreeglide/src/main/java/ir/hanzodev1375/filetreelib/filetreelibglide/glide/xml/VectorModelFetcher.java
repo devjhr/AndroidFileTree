@@ -23,11 +23,11 @@ public class VectorModelFetcher implements DataFetcher<Drawable> {
   public void loadData(
       @NonNull Priority priority, @NonNull DataCallback<? super Drawable> callback) {
     try {
-      VectorMasterDrawable drawable = new VectorMasterDrawable(context, model.getFile());
+      var drawable = new VectorMasterDrawable(context, model.getFile());
       if (drawable.isVector()) {
         callback.onDataReady(drawable);
       } else {
-       // callback.onDataReady(XmlShapeParser.parse(context, model.getFile()));
+        callback.onDataReady(XmlShapeParser.parse(context, model.getFile()));
       }
     } catch (Exception e) {
       callback.onLoadFailed(e);
