@@ -14,12 +14,11 @@ import ir.hanzodev1375.filetreelib.icons.BaseIconProvider;
 import ir.hanzodev1375.filetreelib.icons.DefaultIconProvider;
 import ir.hanzodev1375.filetreelib.core.TreeNode;
 import java.io.File;
-
-
+import ir.hanzodev1375.filetreelib.R;
 import ir.hanzodev1375.filetreelibglide.drawablexml.DrawableXmlLoader;
 import ir.hanzodev1375.filetreelibglide.drawablexml.AlphaPatternDrawable;
 
-public class FileIconGlide extends BaseIconProvider{
+public class FileIconGlide extends BaseIconProvider {
 
   private final DefaultIconProvider defaultProvider = new DefaultIconProvider();
 
@@ -41,12 +40,14 @@ public class FileIconGlide extends BaseIconProvider{
     }
 
     if (isVectorXmlFile(node) && path != null) {
-        Drawable vd = DrawableXmlLoader.load(context, new File(path));
-        if (vd != null) {
-            target.setBackground(new AlphaPatternDrawable());
-            target.setImageDrawable(vd);
-            return;
-        }
+
+      Glide.with(context).load(new File(path)).error(R.drawable.ic_filetree_xml).into(target);
+      //        Drawable vd = DrawableXmlLoader.load(context, new File(path));
+      //        if (vd != null) {
+      //            target.setBackground(new AlphaPatternDrawable());
+      //            target.setImageDrawable(vd);
+      //            return;
+      //        }
     }
 
     if (isApkFile(node) && path != null) {

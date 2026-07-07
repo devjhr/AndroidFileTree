@@ -13,6 +13,8 @@ import android.graphics.drawable.PictureDrawable;
 import ir.hanzodev1375.filetreelibglide.glide.apkicon.ApkIconModelLoader;
 import ir.hanzodev1375.filetreelibglide.glide.svg.SvgDrawableTranscoder;
 import ir.hanzodev1375.filetreelibglide.glide.music.Mp3CoverLoaderFactory;
+import ir.hanzodev1375.filetreelibglide.glide.xml.XmlDrawableModelLoader;
+import java.io.File;
 import java.io.InputStream;
 import ir.hanzodev1375.filetreelibglide.glide.svg.SvgDecoder;
 
@@ -21,10 +23,12 @@ public class AppGlideCompat extends LibraryGlideModule {
   @Override
   public void registerComponents(
       @NonNull Context context, @NonNull Glide glide, @NonNull Registry registry) {
+    
     registry.append(String.class, Bitmap.class, new Mp3CoverLoaderFactory());
     registry
         .register(SVG.class, PictureDrawable.class, new SvgDrawableTranscoder())
         .append(InputStream.class, SVG.class, new SvgDecoder());
     registry.append(String.class, Drawable.class, new ApkIconModelLoader.Factory(context));
+    registry.prepend(File.class, Drawable.class, new XmlDrawableModelLoader.Factory(context));
   }
 }
