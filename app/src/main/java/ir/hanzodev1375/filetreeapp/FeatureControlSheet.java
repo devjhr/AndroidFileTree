@@ -24,7 +24,7 @@ import ir.hanzodev1375.filetreelib.adapter.TreeAdapter;
 import ir.hanzodev1375.filetreelib.core.TreeNode;
 import ir.hanzodev1375.filetreelib.icons.DefaultIconProvider;
 import ir.hanzodev1375.filetreelib.model.FilePayload;
-import ir.hanzodev1375.filetreelib.theme.ThemeManager;
+import ir.hanzodev1375.filetreelib.theme.FTThemeManager;
 import ir.hanzodev1375.filetreelib.widget.FileTreeView;
 import ir.hanzodev1375.filetreelibglide.FileIconGlide;
 import java.util.ArrayList;
@@ -43,7 +43,7 @@ import java.util.Locale;
  * FileTreeView#setAdapter} / {@link FileTreeView#setSelectionPanel} are extension points that need
  * an actual custom subclass to demo (their current values are still shown in the state dump).
  */
-public final class FeatureControlSheet {
+public  class FeatureControlSheet {
 
   private static final String TAG = "FeatureControlSheet";
 
@@ -77,7 +77,7 @@ public final class FeatureControlSheet {
     addSectionHeader(activity, root, "Zoom (setZoomMod / setZoomScale / setCurrentZoomScale)");
     addZoomControls(activity, view, root);
 
-    addSectionHeader(activity, root, "Theme (ThemeManager via getTheme/setTheme)");
+    addSectionHeader(activity, root, "Theme (FTThemeManager via getTheme/setTheme)");
     addThemeControls(activity, view, root);
 
     addSectionHeader(activity, root, "Icon provider (setIconProvider / setIconArrow)");
@@ -288,7 +288,7 @@ public final class FeatureControlSheet {
   }
 
   // ---------------------------------------------------------------------------------------
-  // Theme: a few preset swaps built from ThemeManager's setters, applied on the live instance
+  // Theme: a few preset swaps built from FTThemeManager's setters, applied on the live instance
   // returned by getTheme() and pushed back via setTheme().
   // ---------------------------------------------------------------------------------------
 
@@ -298,7 +298,7 @@ public final class FeatureControlSheet {
         root,
         "Default theme",
         v -> {
-          ThemeManager theme = new ThemeManager(activity);
+          FTThemeManager theme = new FTThemeManager(activity);
           view.setTheme(theme);
         });
 
@@ -307,7 +307,7 @@ public final class FeatureControlSheet {
         root,
         "Neon theme",
         v -> {
-          ThemeManager theme = view.getTheme();
+          FTThemeManager theme = view.getTheme();
           theme.setTextColor(Color.parseColor("#00FFE5"));
           theme.setTreeLineColor(Color.parseColor("#FF00FF"));
           theme.setSelectedBg(Color.parseColor("#332A00FF"));
@@ -319,7 +319,7 @@ public final class FeatureControlSheet {
         root,
         "Warm theme",
         v -> {
-          ThemeManager theme = view.getTheme();
+          FTThemeManager theme = view.getTheme();
           theme.setTextColor(Color.parseColor("#FFD9A0"));
           theme.setTreeLineColor(Color.parseColor("#FF8C42"));
           theme.setSelectedBg(Color.parseColor("#33FF8C42"));

@@ -10,7 +10,7 @@ import com.google.android.material.color.MaterialColors;
 import ir.hanzodev1375.filetreelib.R;
 
 /** Resolves theme attributes for the TreeView. */
-public final class ThemeManager {
+public class FTThemeManager {
 
   @ColorInt private int textColor;
   @ColorInt private int selectedBg;
@@ -27,11 +27,11 @@ public final class ThemeManager {
   @ColorInt private int panelDividerColors;
   @ColorInt private int revealHighlightColor;
   @NonNull private Context context;
-  private final int indentWidthPx;
-  private final int iconSizePx;
-  private final float treeLineWidthPx;
+  private int indentWidthPx;
+  private int iconSizePx;
+  private float treeLineWidthPx;
 
-  public ThemeManager(@NonNull Context context) {
+  public FTThemeManager(@NonNull Context context) {
     this.context = context;
     TypedArray a =
         context.obtainStyledAttributes(
@@ -93,8 +93,9 @@ public final class ThemeManager {
 
   /**
    * A dimmer variant of {@link #getTextColor()} for secondary text — e.g. the description shown
-   * after a node's name (see {@link ir.hanzodev1375.filetreelib.model.FilePayload#getDescription()}).
-   * Always derived from the current text color, so it stays in sync if the theme changes.
+   * after a node's name (see {@link
+   * ir.hanzodev1375.filetreelib.model.FilePayload#getDescription()}). Always derived from the
+   * current text color, so it stays in sync if the theme changes.
    */
   @ColorInt
   public int getSecondaryTextColor() {

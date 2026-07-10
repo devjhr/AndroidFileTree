@@ -10,7 +10,7 @@ import androidx.core.view.ViewCompat;
 import androidx.recyclerview.widget.RecyclerView;
 import ir.hanzodev1375.filetreelib.adapter.TreeAdapter;
 import ir.hanzodev1375.filetreelib.core.TreeNode;
-import ir.hanzodev1375.filetreelib.theme.ThemeManager;
+import ir.hanzodev1375.filetreelib.theme.FTThemeManager;
 
 /** Draws the vertical indentation guide lines (like VS Code's tree lines). */
 public final class TreeDecoration extends RecyclerView.ItemDecoration {
@@ -30,13 +30,13 @@ public final class TreeDecoration extends RecyclerView.ItemDecoration {
   };
 
   private final Paint linePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-  private final ThemeManager theme;
+  private final FTThemeManager theme;
   private final int indentPx;
   private boolean showLines = true;
   private boolean rainbowLines = false;
   private int[] rainbowColors = DEFAULT_RAINBOW_COLORS;
 
-  public TreeDecoration(@NonNull ThemeManager theme) {
+  public TreeDecoration(@NonNull FTThemeManager theme) {
     this.theme = theme;
     this.indentPx = theme.getIndentWidthPx();
     linePaint.setColor(theme.getTreeLineColor());
@@ -52,7 +52,7 @@ public final class TreeDecoration extends RecyclerView.ItemDecoration {
    * Enables or disables rainbow indent guides. When enabled, each indentation level is drawn in a
    * different color cycled from the palette (see {@link #setRainbowColors(int[])}), similar to
    * bracket-pair colorization in VS Code. When disabled (the default), every guide line uses the
-   * theme's single {@link ThemeManager#getTreeLineColor()}.
+   * theme's single {@link FTThemeManager#getTreeLineColor()}.
    */
   public void setRainbowIndentGuides(boolean enabled) {
     this.rainbowLines = enabled;

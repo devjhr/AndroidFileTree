@@ -30,7 +30,7 @@ import ir.hanzodev1375.filetreelib.widget.TreeView;
 import ir.hanzodev1375.filetreelib.widget.SelectionActionPanel;
 import ir.hanzodev1375.filetreelib.core.TreeController;
 import ir.hanzodev1375.filetreelib.adapter.TreeAdapter;
-import ir.hanzodev1375.filetreelib.theme.ThemeManager;
+import ir.hanzodev1375.filetreelib.theme.FTThemeManager;
 import ir.hanzodev1375.filetreelib.clipboard.ClipboardManager;
 import ir.hanzodev1375.filetreelib.filesystem.FileWatcher;
 import ir.hanzodev1375.filetreelib.search.TreeSearchEngine;
@@ -59,7 +59,7 @@ public class SampleExplorerActivity extends AppCompatActivity {
   private SelectionActionPanel selectionPanel;
   private TreeController controller;
   private TreeAdapter adapter;
-  private ThemeManager theme;
+  private FTThemeManager theme;
   private ClipboardManager clipboard;
   private FileWatcher fileWatcher;
   private TreeSearchEngine searchEngine;
@@ -78,7 +78,7 @@ public class SampleExplorerActivity extends AppCompatActivity {
     selectionPanel = findViewById(R.id.selectionPanel);
     EditText etSearch = findViewById(R.id.et_search);
 
-    theme = new ThemeManager(this);
+    theme = new FTThemeManager(this);
     clipboard = new ClipboardManager();
     fileWatcher = new FileWatcher();
     searchEngine = new TreeSearchEngine();

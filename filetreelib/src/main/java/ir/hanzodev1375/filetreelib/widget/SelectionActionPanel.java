@@ -20,7 +20,7 @@ import ir.hanzodev1375.filetreelib.clipboard.ClipboardManager;
 import ir.hanzodev1375.filetreelib.core.TreeController;
 import ir.hanzodev1375.filetreelib.core.TreeNode;
 
-import ir.hanzodev1375.filetreelib.theme.ThemeManager;
+import ir.hanzodev1375.filetreelib.theme.FTThemeManager;
 import java.util.List;
 
 public final class SelectionActionPanel extends LinearLayout {
@@ -55,7 +55,7 @@ public final class SelectionActionPanel extends LinearLayout {
   @Nullable private TreeController controller;
   @Nullable private ClipboardManager clipboard;
   @Nullable private ActionListener actionListener;
-  @Nullable private ThemeManager theme;
+  @Nullable private FTThemeManager theme;
   private boolean attached = false;
 
   public SelectionActionPanel(@NonNull Context context) {
@@ -77,7 +77,7 @@ public final class SelectionActionPanel extends LinearLayout {
   private void init(@NonNull Context context) {
     LayoutInflater.from(context).inflate(R.layout.selection_action_panel, this, true);
     setOrientation(VERTICAL);
-    theme = new ThemeManager(context);
+    theme = new FTThemeManager(context);
     tvCount = findViewById(R.id.txt_selected_count);
     btnClose = findViewById(R.id.btn_close);
     btnCopy = findViewById(R.id.btn_copy);
@@ -92,7 +92,7 @@ public final class SelectionActionPanel extends LinearLayout {
     wireClicks();
   }
 
-  void applyColorFilter(ThemeManager theme) {
+  void applyColorFilter(FTThemeManager theme) {
     setBackgroundColor(theme.getPanelBackgroundColor());
     divview.setBackgroundColor(theme.getPanelDividerColors());
     btnClose.setColorFilter(theme.getPanelColorFilterColor(), PorterDuff.Mode.SRC_IN);

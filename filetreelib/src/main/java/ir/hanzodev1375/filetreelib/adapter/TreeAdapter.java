@@ -19,7 +19,7 @@ import ir.hanzodev1375.filetreelib.icons.DefaultIconProvider;
 import ir.hanzodev1375.filetreelib.icons.IconProvider;
 import ir.hanzodev1375.filetreelib.model.SearchResult;
 import ir.hanzodev1375.filetreelib.selection.SelectionManager;
-import ir.hanzodev1375.filetreelib.theme.ThemeManager;
+import ir.hanzodev1375.filetreelib.theme.FTThemeManager;
 import ir.hanzodev1375.filetreelib.utils.VisibleNodeList;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,7 +52,7 @@ public final class TreeAdapter extends RecyclerView.Adapter<TreeViewHolder> {
   @NonNull
   private final VisibleNodeList visibleList;
   @NonNull
-  private final ThemeManager theme;
+  private final FTThemeManager theme;
   @NonNull
   private IconProvider iconProvider;
   @Nullable
@@ -121,7 +121,7 @@ public final class TreeAdapter extends RecyclerView.Adapter<TreeViewHolder> {
   @Nullable private Runnable pendingHighlightClear;
   private static final long DEFAULT_HIGHLIGHT_DURATION_MS = 5000L;
 
-  public TreeAdapter(@NonNull Context context, @NonNull TreeController controller, @NonNull ThemeManager theme) {
+  public TreeAdapter(@NonNull Context context, @NonNull TreeController controller, @NonNull FTThemeManager theme) {
     this.context = context;
     this.controller = controller;
     this.visibleList = controller.getVisibleList();

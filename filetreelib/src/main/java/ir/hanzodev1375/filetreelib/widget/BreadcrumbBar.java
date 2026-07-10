@@ -13,7 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import ir.hanzodev1375.filetreelib.core.TreeNode;
 import ir.hanzodev1375.filetreelib.core.TreePath;
-import ir.hanzodev1375.filetreelib.theme.ThemeManager;
+import ir.hanzodev1375.filetreelib.theme.FTThemeManager;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -131,7 +131,7 @@ public final class BreadcrumbBar extends RecyclerView {
   @NonNull private final List<Row> rows = new ArrayList<>();
   @NonNull private final RowAdapter adapter = new RowAdapter();
 
-  @Nullable private ThemeManager theme;
+  @Nullable private FTThemeManager theme;
   @Nullable private OnSegmentClickListener listener;
 
   @NonNull private String rootPath = "";
@@ -173,7 +173,7 @@ public final class BreadcrumbBar extends RecyclerView {
   // -------------------------------------------------------------------------
 
   /** Applies theme colors. Safe to call again later if the theme changes. */
-  public void setTheme(@NonNull ThemeManager theme) {
+  public void setTheme(@NonNull FTThemeManager theme) {
     this.theme = theme;
     setBackgroundColor(theme.getPanelBackgroundColor());
     adapter.notifyDataSetChanged();

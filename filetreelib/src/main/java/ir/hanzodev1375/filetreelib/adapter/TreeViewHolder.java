@@ -19,7 +19,7 @@ import ir.hanzodev1375.filetreelib.core.TreeNode;
 import ir.hanzodev1375.filetreelib.icons.IconProvider;
 import ir.hanzodev1375.filetreelib.model.FilePayload;
 import ir.hanzodev1375.filetreelib.model.SearchResult;
-import ir.hanzodev1375.filetreelib.theme.ThemeManager;
+import ir.hanzodev1375.filetreelib.theme.FTThemeManager;
 import android.graphics.drawable.Drawable;
 import android.view.ViewGroup;
 import ir.hanzodev1375.filetreelib.utils.TreeUtils;
@@ -64,7 +64,7 @@ public final class TreeViewHolder extends RecyclerView.ViewHolder {
 
   public void bind(
       @NonNull TreeNode node,
-      @NonNull ThemeManager theme,
+      @NonNull FTThemeManager theme,
       @NonNull IconProvider iconProvider,
       @Nullable SearchResult searchResult,
       @NonNull View.OnClickListener clickListener,

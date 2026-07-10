@@ -22,14 +22,14 @@ import ir.hanzodev1375.filetreelib.core.TreeController;
 import ir.hanzodev1375.filetreelib.core.TreeNode;
 import ir.hanzodev1375.filetreelib.decoration.TreeDecoration;
 import ir.hanzodev1375.filetreelib.drag.DragManager;
-import ir.hanzodev1375.filetreelib.theme.ThemeManager;
+import ir.hanzodev1375.filetreelib.theme.FTThemeManager;
 import ir.hanzodev1375.filetreelib.widget.TwoDScrollView;
 import java.util.List;
 
 public final class TreeView extends RecyclerView {
 
   private TreeAdapter treeAdapter;
-  private ThemeManager theme;
+  private FTThemeManager theme;
   private TreeDecoration treeDecoration;
   private TreeAnimator animator;
   private int focusedPosition = -1;
@@ -119,7 +119,7 @@ public final class TreeView extends RecyclerView {
     else setItemAnimator(null);
   }
 
-  public void setup(@NonNull TreeController controller, @NonNull ThemeManager themeManager) {
+  public void setup(@NonNull TreeController controller, @NonNull FTThemeManager themeManager) {
     this.theme = themeManager;
     this.treeAdapter = new TreeAdapter(getContext(), controller, themeManager);
     setAdapter(treeAdapter);

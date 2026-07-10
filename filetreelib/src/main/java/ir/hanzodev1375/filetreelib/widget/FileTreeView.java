@@ -25,7 +25,7 @@ import ir.hanzodev1375.filetreelib.provider.FileTreeProvider;
 import ir.hanzodev1375.filetreelib.cache.TreeCache;
 import ir.hanzodev1375.filetreelib.drag.DragManager;
 import android.widget.Toast;
-import ir.hanzodev1375.filetreelib.theme.ThemeManager;
+import ir.hanzodev1375.filetreelib.theme.FTThemeManager;
 import ir.hanzodev1375.filetreelib.clipboard.ClipboardManager;
 import ir.hanzodev1375.filetreelib.filesystem.FileWatcher;
 import ir.hanzodev1375.filetreelib.search.TreeSearchEngine;
@@ -51,7 +51,7 @@ public class FileTreeView extends LinearLayout {
   private SelectionActionPanel selectionPanel;
   private TreeController controller;
   private TreeAdapter adapter;
-  private ThemeManager theme;
+  private FTThemeManager theme;
   private ClipboardManager clipboard;
   private FileWatcher fileWatcher;
   private TreeSearchEngine searchEngine;
@@ -109,7 +109,7 @@ public class FileTreeView extends LinearLayout {
     nodesearch = v.findViewById(R.id.nodesearch);
     nodesearch.setVisibility(showSearchBar ? View.VISIBLE : View.GONE);
     breadcrumbbar.setVisibility(showBreadcrumbBar ? View.VISIBLE : View.GONE);
-    theme = new ThemeManager(getContext());
+    theme = new FTThemeManager(getContext());
     clipboard = new ClipboardManager();
     fileWatcher = new FileWatcher();
     searchEngine = new TreeSearchEngine();
@@ -835,12 +835,12 @@ public class FileTreeView extends LinearLayout {
     return this.controller;
   }
 
-  public ThemeManager getTheme() {
+  public FTThemeManager getTheme() {
     return this.theme;
   }
 
   /** setCustomTheme */
-  public void setTheme(ThemeManager theme) {
+  public void setTheme(FTThemeManager theme) {
     this.theme = theme;
   }
 
